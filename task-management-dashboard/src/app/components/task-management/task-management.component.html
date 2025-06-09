@@ -1,0 +1,267 @@
+<div class="task-management-container">
+    <div class="header-section">
+        <h2>Task Management</h2>
+        <button class="btn btn-primary" (click)="openCreateModal()">
+            <i class="fas fa-plus"></i> Add New Task
+        </button>
+    </div>
+
+    <!-- DEBUG SECTION - Remove this after fixing -->
+    <div class="debug-section"
+        style="background: #f0f0f0; padding: 15px; margin: 15px 0; border: 2px solid #007bff; border-radius: 8px;">
+        <h4 style="color: #007bff; margin: 0 0 10px 0;">🔍 Task Management Debug Info</h4>
+        <div
+            style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; font-size: 14px;">
+            <div><strong>Loading:</strong> {{ dashboardService.loading() }}</div>
+            <div><strong>Error:</strong> {{ dashboardService.error() || 'None' }}</div>
+            <div><strong>Dashboard Data Exists:</strong> {{ !!dashboardService.dashboardData() }}</div>
+            <div><strong>Raw Tasks Count:</strong> {{ (dashboardService.dashboardData()?.Tasks?.length) || 0 }}</div>
+            <div><strong>Filtered Tasks Count:</strong> {{ filteredTasks().length }}</div>
+            <div><strong>Status Filter:</strong> "{{ statusFilter }}"</div>
+            <div><strong>Sport Filter:</strong> "{{ sportFilter }}"</div>
+            <div><strong>Search Term:</strong> "{{ searchTerm }}"</div>
+        </div>
+
+        <details style="margin-top: 10px;">
+            <summary style="cursor: pointer; color: #007bff; font-weight: bold;">Click to see first 2 tasks from
+                dashboard data</summary>
+            <pre
+                style="background: #fff; padding: 10px; border-radius: 4px; margin-top: 5px; font-size: 12px; max-height: 200px; overflow-y: auto;">{{ (dashboardService.dashboardData()?.Tasks?.slice(0, 2) | json) || 'No tasks data available' }}</pre>
+        </details>
+
+        <details style="margin-top: 5px;">
+            <summary style="cursor: pointer; color: #007bff; font-weight: bold;">Click to see first 2 filtered tasks
+            </summary>
+            <pre
+                style="background: #fff; padding: 10px; border-radius: 4px; margin-top: 5px; font-size: 12px; max-height: 200px; overflow-y: auto;">{{ (filteredTasks().slice(0, 2) | json) || 'No filtered tasks' }}</pre>
+        </details>
+    </div>
+    <!-- END DEBUG SECTION -->
+
+    <!-- Filters -->
+    <div class="filters-section">
+        <div class="filter-group">
+            <label>Filter by Status:</label>
+            <select [(ngModel)]="statusFilter" (change)="applyFilters()" title="Filter by Status">
+                <option value="">All Statuses</option>
+                @for (status of statusOptions; track status.value) {
+                <option [value]="status.value">{{ status.label }}</option>
+                }
+            </select>
+        </div>
+
+        <div class="filter-group">
+            <label>Filter by Sport:</label>
+            <select [(ngModel)]="sportFilter" (change)="applyFilters()" title="Filter by Sport">
+                <option value="">All Sports</option>
+                @for (sport of sportsOptions; track sport) {
+                <option [value]="sport">{{ sport }}</option>
+                }
+            </select>
+        </div>
+
+        <div class="filter-group">
+            <label>Search:</label>
+            <input type="text" [(ngModel)]="searchTerm" (input)="applyFilters()"
+                placeholder="Search by customer, assignee, or task name...">
+        </div>
+
+        <div class="filter-group">
+            <button class="btn btn-secondary" (click)="clearFilters()">Clear All Filters</button>
+        </div>
+    </div>
+
+    <!-- Tasks Table -->
+    <div class="table-container">
+        @if (dashboardService.loading()) {
+        <div class="loading-spinner">
+            <div class="spinner"></div>
+            <p>Loading tasks...</p>
+        </div>
+        } @else if (dashboardService.error()) {
+        <div class="error-message">
+            <h3>Error loading tasks</h3>
+            <p>{{ dashboardService.error() }}</p>
+            <button class="btn btn-primary" (click)="loadTasks()">Retry</button>
+        </div>
+        } @else if (filteredTasks().length === 0 && (dashboardService.dashboardData()?.Tasks?.length || 0) > 0) {
+        <div class="no-results-message">
+            <h3>No tasks match your current filters</h3>
+            <p>Try clearing some filters to see more tasks.</p>
+            <button class="btn btn-secondary" (click)="clearFilters()">Clear All Filters</button>
+        </div>
+        } @else if (filteredTasks().length === 0) {
+        <div class="empty-state">
+            <h3>No tasks found</h3>
+            <p>Get started by creating your first task!</p>
+            <button class="btn btn-primary" (click)="openCreateModal()">
+                <i class="fas fa-plus"></i> Create First Task
+            </button>
+        </div>
+        } @else {
+        <table class="tasks-table">
+            <thead>
+                <tr>
+                    <th>Task Name</th>
+                    <th>Customer</th>
+                    <th>Phone No</th>
+                    <th>Sport</th>
+                    <th>Assigned To</th>
+                    <th>Deadline</th>
+                    <th>Status</th>
+                    <th>Progress</th>
+                    <th>Updates</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @for (task of filteredTasks(); track task.Id) {
+                <tr [class]="getTaskRowClass(task)">
+                    <td>
+                        <strong>{{ task.Name }}</strong>
+                        <small class="group-tag">{{ task.GroupTask }}</small>
+                    </td>
+                    <td>{{ task.Customer }}</td>
+                    <td>
+                        @if (task.PhoneNo) {
+                        <a [href]="'tel:' + task.PhoneNo">{{ task.PhoneNo }}</a>
+                        } @else {
+                        <span class="text-muted">No phone</span>
+                        }
+                    </td>
+                    <td>
+                        <span class="sport-badge">
+                            <i [class]="getSportIcon(task.SportPlayed)"></i>
+                            {{ task.SportPlayed }}
+                        </span>
+                    </td>
+                    <td>{{ task.AssignedTo }}</td>
+                    <td>
+                        <span [class]="getDeadlineClass(task.Deadline)">
+                            {{ formatDate(task.Deadline) }}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="status-badge" [class]="getStatusClass(task.Status)">
+                            {{ getStatusText(task.Status) }}
+                        </span>
+                    </td>
+                    <td>
+                        <div class="progress-container">
+                            <div class="progress-bar">
+                                <div class="progress-fill" [style.width.%]="task.PercentCompleted"></div>
+                            </div>
+                            <span class="progress-text">{{ task.PercentCompleted }}%</span>
+                        </div>
+                    </td>
+                    <td class="updates-cell">
+                        <div class="updates-preview" [title]="task.Updates">
+                            {{ getUpdatesPreview(task.Updates) }}
+                        </div>
+                    </td>
+                    <td class="actions-cell">
+                        <button class="btn-icon" (click)="editTask(task)" title="Edit">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn-icon delete" (click)="deleteTask(task.Id)" title="Delete">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+                }
+            </tbody>
+        </table>
+        }
+    </div>
+
+    <!-- Create/Edit Modal -->
+    @if (showModal()) {
+    <div class="modal-overlay" (click)="closeModal()">
+        <div class="modal-content" (click)="$event.stopPropagation()">
+            <div class="modal-header">
+                <h3>{{ editingTask() ? 'Edit Task' : 'Create New Task' }}</h3>
+                <button class="close-btn" (click)="closeModal()">×</button>
+            </div>
+
+            <form class="modal-body" (ngSubmit)="saveTask()" #formRef="ngForm">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="taskName">Task Name *</label>
+                        <input type="text" id="taskName" [(ngModel)]="formData.name" name="taskName" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="customerName">Customer *</label>
+                        <input type="text" id="customerName" [(ngModel)]="formData.customer" name="customerName"
+                            required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="phoneNumber">Phone Number</label>
+                        <input type="tel" id="phoneNumber" [(ngModel)]="formData.phoneNo" name="phoneNumber">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="sport">Sport *</label>
+                        <select id="sport" [(ngModel)]="formData.sportPlayed" name="sport" required>
+                            <option value="">Select Sport</option>
+                            @for (sport of sportsOptions; track sport) {
+                            <option [value]="sport">{{ sport }}</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="assignee">Assigned To *</label>
+                        <input type="text" id="assignee" [(ngModel)]="formData.assignedTo" name="assignee" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="group">Group/Category</label>
+                        <input type="text" id="group" [(ngModel)]="formData.groupTask" name="group">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="dueDate">Deadline *</label>
+                        <input type="date" id="dueDate" [(ngModel)]="formData.deadline" name="dueDate" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="taskStatus">Status</label>
+                        <select id="taskStatus" [(ngModel)]="formData.status" name="taskStatus">
+                            @for (status of statusOptions; track status.value) {
+                            <option [value]="status.value">{{ status.label }}</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="hoursRequired">Work Required (hours)</label>
+                        <input type="number" id="hoursRequired" [(ngModel)]="formData.workRequired" name="hoursRequired"
+                            min="1">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="completionPercent">Progress (%)</label>
+                        <input type="number" id="completionPercent" [(ngModel)]="formData.PercentCompleted"
+                            name="completionPercent" min="0" max="100">
+                    </div>
+                </div>
+
+                <div class="form-group full-width">
+                    <label for="taskUpdates">Updates/Notes</label>
+                    <textarea id="taskUpdates" [(ngModel)]="formData.updates" name="taskUpdates" rows="3"
+                        placeholder="Add any updates or notes about this task..."></textarea>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" (click)="closeModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary" [disabled]="!formRef.valid">
+                        {{ editingTask() ? 'Update Task' : 'Create Task' }}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    }
+</div>

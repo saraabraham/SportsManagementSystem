@@ -1,36 +1,27 @@
 // src/app/models/task.model.ts - Updated with new fields
+import { TaskItemStatus } from '../enums/task-item-status.enum';
 export interface TaskItem {
-    id: number;
-    name: string;
-    assignedTo: string;
-    workRequired: number;
-    deadline: Date;
-    percentCompleted: number;
-    status: TaskStatus;
-    groupTask: string;
-    // New fields
-    customer: string;
-    phoneNo: string;
-    sportPlayed: string;
-    updates: string;
-    createdAt: Date;
-    updatedAt?: Date;
+    Id: number;
+    Name: string;
+    AssignedTo: string;
+    WorkRequired: number;
+    Deadline: string; // Or Date, depending on your parsing
+    PercentCompleted: number;
+    Status: TaskItemStatus; // Make sure this matches TaskStatus enum values correctly
+    GroupTask: string;
+    Customer: string;
+    PhoneNo: string;
+    SportPlayed: string;
+    Updates: string;
+    CreatedAt: string; // Or Date
 }
 
-export enum TaskStatus {
-    NotStarted = 'NotStarted',
-    InProgress = 'InProgress',
-    Late = 'Late',
-    Completed = 'Completed',
-    OnHold = 'OnHold',
-    Cancelled = 'Cancelled'
-}
 
 export interface Resource {
-    id: number;
-    name: string;
-    workloadHours: number;
-    status: ResourceStatus;
+    Id: number;
+    Name: string;
+    WorkloadHours: number;
+    Status: string;
 }
 
 export enum ResourceStatus {
@@ -40,32 +31,34 @@ export enum ResourceStatus {
 }
 
 export interface DashboardData {
-    taskCompletion: TaskCompletionStats;
-    activeTasks: ActiveTaskStats;
-    resourceWorkload: ResourceWorkloadStats;
-    projectCompletion: ProjectCompletionStats;
-    tasks: TaskItem[];
-    resources: Resource[];
+    TaskCompletion: TaskCompletionStats;
+    ActiveTasks: ActiveTaskStats;
+    ResourceWorkload: ResourceWorkloadStats;
+    ProjectCompletion: ProjectCompletionStats;
+    Tasks: TaskItem[];   // Changed from 'tasks' to 'Tasks'
+    Resources: Resource[];
 }
+
 
 export interface TaskCompletionStats {
-    onTrack: number;
-    late: number;
+    OnTrack: number; // Changed from 'onTrack' to 'OnTrack'
+    Late: number;    // Changed from 'late' to 'Late'
 }
 
+
 export interface ActiveTaskStats {
-    completed: number;
-    inProgress: number;
-    notStarted: number;
+    Completed: number;  // Changed from 'completed' to 'Completed'
+    InProgress: number; // Changed from 'inProgress' to 'InProgress'
+    NotStarted: number; // Changed from 'notStarted' to 'NotStarted'
 }
 
 export interface ResourceWorkloadStats {
-    done: number;
-    leftToDo: number;
+    Done: number;       // Changed from 'done' to 'Done'
+    LeftToDo: number;   // Changed from 'leftToDo' to 'LeftToDo'
 }
 
 export interface ProjectCompletionStats {
-    completionPercentage: number;
+    CompletionPercentage: number; // Changed from 'completionPercentage' to 'CompletionPercentage'
 }
 
 export interface TaskGroup {
@@ -80,7 +73,7 @@ export interface CreateTaskRequest {
     workRequired: number;
     deadline: Date;
     percentCompleted: number;
-    status: TaskStatus;
+    status: TaskItemStatus;
     groupTask: string;
     customer: string;
     phoneNo: string;

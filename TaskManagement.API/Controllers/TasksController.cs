@@ -1,4 +1,5 @@
-// Controllers/TasksController.cs - Updated with better error handling
+// Replace your entire TasksController.cs with this version that includes a test endpoint:
+
 using Microsoft.AspNetCore.Mvc;
 using TaskManagement.Models;
 using TaskManagement.Services;
@@ -18,13 +19,41 @@ namespace TaskManagement.Controllers
             _logger = logger;
         }
 
+        // Simple test endpoint to verify controller is working
+        [HttpGet("test")]
+        public IActionResult TestEndpoint()
+        {
+            _logger.LogInformation("=== TEST ENDPOINT CALLED ===");
+            _logger.LogInformation("Request Method: {Method}", Request.Method);
+            _logger.LogInformation("Request Path: {Path}", Request.Path);
+
+            return Ok(new
+            {
+                message = "Tasks controller is working!",
+                timestamp = DateTime.UtcNow,
+                endpoint = "GET /api/tasks/test",
+                status = "SUCCESS"
+            });
+        }
+
         [HttpGet]
         public async Task<ActionResult<List<TaskItem>>> GetTasks()
         {
             try
             {
-                _logger.LogInformation("Getting all tasks");
+                _logger.LogInformation("=== GET ALL TASKS ENDPOINT CALLED ===");
+                _logger.LogInformation("Request Method: {Method}", Request.Method);
+                _logger.LogInformation("Request Path: {Path}", Request.Path);
+                _logger.LogInformation("Request URL: {Scheme}://{Host}{Path}{QueryString}",
+                    Request.Scheme, Request.Host, Request.Path, Request.QueryString);
+                _logger.LogInformation("Content-Type: {ContentType}", Request.ContentType);
+                _logger.LogInformation("Accept Headers: {Accept}", Request.Headers.Accept);
+
                 var tasks = await _taskService.GetAllTasksAsync();
+
+                _logger.LogInformation("Successfully retrieved {Count} tasks", tasks.Count);
+                _logger.LogInformation("Returning 200 OK with {Count} tasks", tasks.Count);
+
                 return Ok(tasks);
             }
             catch (Exception ex)
@@ -39,13 +68,19 @@ namespace TaskManagement.Controllers
         {
             try
             {
-                _logger.LogInformation("Getting task with ID: {TaskId}", id);
+                _logger.LogInformation("=== GET SINGLE TASK ENDPOINT CALLED ===");
+                _logger.LogInformation("Request Method: {Method}", Request.Method);
+                _logger.LogInformation("Request Path: {Path}", Request.Path);
+                _logger.LogInformation("Requested Task ID: {TaskId}", id);
+
                 var task = await _taskService.GetTaskByIdAsync(id);
                 if (task == null)
                 {
                     _logger.LogWarning("Task with ID {TaskId} not found", id);
                     return NotFound(new { message = $"Task with ID {id} not found" });
                 }
+
+                _logger.LogInformation("Successfully found task with ID {TaskId}: {TaskName}", id, task.Name);
                 return Ok(task);
             }
             catch (Exception ex)
@@ -54,8 +89,6 @@ namespace TaskManagement.Controllers
                 return StatusCode(500, new { message = "Error retrieving task", error = ex.Message });
             }
         }
-
-        // Replace your CreateTask method in TasksController.cs with this fixed version:
 
         [HttpPost]
         public async Task<ActionResult<TaskItem>> CreateTask([FromBody] TaskItem task)
@@ -73,7 +106,7 @@ namespace TaskManagement.Controllers
                     foreach (var error in ModelState)
                     {
                         _logger.LogWarning("Key: {Key}, Errors: {Errors}",
-                            error.Key, string.Join(", ", error.Value.Errors.Select(e => e.ErrorMessage)));
+                            error.Key, string.Join(", ", error.Value?.Errors.Select(e => e.ErrorMessage) ?? new List<string>()));
                     }
 
                     return BadRequest(new
@@ -81,7 +114,7 @@ namespace TaskManagement.Controllers
                         message = "Model validation failed",
                         errors = ModelState.ToDictionary(
                             kvp => kvp.Key,
-                            kvp => kvp.Value.Errors.Select(e => e.ErrorMessage).ToArray()
+                            kvp => kvp.Value?.Errors.Select(e => e.ErrorMessage).ToArray() ?? Array.Empty<string>()
                         )
                     });
                 }

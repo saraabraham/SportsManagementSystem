@@ -24,18 +24,18 @@ export class DashboardService {
     // Computed signals
     public totalTasks = computed(() => {
         const data = this.dashboardData();
-        return data?.taskCompletion ? data.taskCompletion.onTrack + data.taskCompletion.late : 0;
+        return data?.TaskCompletion ? data.TaskCompletion.OnTrack + data.TaskCompletion.Late : 0;
     });
 
     public taskGroups = computed(() => {
         const data = this.dashboardData();
-        if (!data?.tasks) return [];
+        if (!data?.Tasks) return [];
 
-        const groups = data.tasks.reduce((acc: Record<string, TaskItem[]>, task) => {
-            if (!acc[task.groupTask]) {
-                acc[task.groupTask] = [];
+        const groups = data.Tasks.reduce((acc: Record<string, TaskItem[]>, task) => {
+            if (!acc[task.GroupTask]) {
+                acc[task.GroupTask] = [];
             }
-            acc[task.groupTask].push(task);
+            acc[task.GroupTask].push(task);
             return acc;
         }, {});
 

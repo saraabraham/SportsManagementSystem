@@ -1,0 +1,234 @@
+<div class="dashboard-container">
+    @if (dashboardService.loading()) {
+    <div class="loading-spinner">
+        <div class="spinner"></div>
+        <p>Loading dashboard data...</p>
+    </div>
+    } @else if (dashboardService.error()) {
+    <div class="error-message">
+        <h3>Error loading dashboard</h3>
+        <p>{{ dashboardService.error() }}</p>
+        <button class="btn btn-primary" (click)="retryLoad()">Retry</button>
+    </div>
+    } @else {
+    <!-- Date Filters Section -->
+    <div class="date-filters-section">
+        <h3>Task Filters</h3>
+        <div class="filter-controls">
+            <div class="filter-group">
+                <label>Filter Type:</label>
+                <select [(ngModel)]="dateFilterType" (change)="applyDateFilters()" title="Select a filter type">
+                    <option value="all">All Tasks</option>
+                    <option value="pending">Pending Tasks Only</option>
+                    <option value="single">Single Date</option>
+                    <option value="range">Date Range</option>
+                </select>
+            </div>
+
+            @if (dateFilterType === 'single') {
+            <div class="filter-group">
+                <label>Select Date:</label>
+                <input type="date" [(ngModel)]="singleDate" (change)="applyDateFilters()" title="Select a date"
+                    placeholder="YYYY-MM-DD">
+            </div>
+            }
+
+            @if (dateFilterType === 'range') {
+            <div class="filter-group">
+                <label>From Date:</label>
+                <input type="date" [(ngModel)]="fromDate" (change)="applyDateFilters()" title="Select a start date"
+                    placeholder="YYYY-MM-DD">
+            </div>
+            <div class="filter-group">
+                <label>To Date:</label>
+                <input type="date" [(ngModel)]="toDate" (change)="applyDateFilters()" title="Select an end date"
+                    placeholder="YYYY-MM-DD">
+            </div>
+            }
+
+            <div class="filter-summary">
+                <span class="filter-result">Showing {{ filteredTasksCount() }} of {{ totalTasksCount() }} tasks</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="dashboard-grid">
+        <!-- Left Side - Charts and Metrics -->
+        <div class="charts-section">
+            <div class="chart-row">
+                <div class="chart-card resource-workload">
+                    <h3>Resource Workload</h3>
+                    <div class="chart-container">
+                        <div class="bar-chart">
+                            <div class="bar done" [style.height.%]="getResourceWorkloadPercentage('done')">
+                                <span class="bar-label">{{ (dashboardData()?.ResourceWorkload?.Done) || 0 }}</span>
+                            </div>
+                            <div class="bar todo" [style.height.%]="getResourceWorkloadPercentage('todo')">
+                                <span class="bar-label">{{ (dashboardData()?.ResourceWorkload?.LeftToDo) || 0 }}</span>
+                            </div>
+                        </div>
+                        <div class="resource-icons">
+                            @for (resource of dashboardData()?.Resources; track resource.Id) {
+                            <div class="icon-group">
+                                <i class="fas fa-user" [class.busy]="resource.Status === 'Busy'"
+                                    [class.overloaded]="resource.Status === 'Overloaded'"></i>
+                            </div>
+                            }
+                        </div>
+                        <div class="legend">
+                            <span class="legend-item done">Done</span>
+                            <span class="legend-item todo">Left to do</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="chart-card task-completion">
+                    <h3>Task completion</h3>
+                    <div class="donut-chart">
+                        <div class="donut-container">
+                            <svg width="120" height="120" viewBox="0 0 42 42">
+                                <circle cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="#ff6b6b"
+                                    stroke-width="3" [attr.stroke-dasharray]="getTaskCompletionDashArray('late')"
+                                    stroke-dashoffset="25"></circle>
+                                <circle cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="#4ecdc4"
+                                    stroke-width="3" [attr.stroke-dasharray]="getTaskCompletionDashArray('onTrack')"
+                                    stroke-dashoffset="0"></circle>
+                            </svg>
+                            <div class="donut-center">
+                                <span class="total">{{ dashboardService.totalTasks() }}</span>
+                            </div>
+                        </div>
+                        <div class="chart-labels">
+                            <div class="label-item">
+                                <span class="dot on-track"></span>
+                                <span>On track: {{ (dashboardData()?.TaskCompletion?.OnTrack) || 0 }}</span>
+                            </div>
+                            <div class="label-item">
+                                <span class="dot late"></span>
+                                <span>Late: {{ (dashboardData()?.TaskCompletion?.Late) || 0 }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="chart-card active-tasks">
+                    <h3>Active Task status</h3>
+                    <div class="donut-chart">
+                        <div class="donut-container">
+                            <svg width="120" height="120" viewBox="0 0 42 42">
+                                <circle cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="#95a5a6"
+                                    stroke-width="3" [attr.stroke-dasharray]="getActiveTasksDashArray('notStarted')"
+                                    stroke-dashoffset="75"></circle>
+                                <circle cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="#3498db"
+                                    stroke-width="3" [attr.stroke-dasharray]="getActiveTasksDashArray('inProgress')"
+                                    stroke-dashoffset="50"></circle>
+                                <circle cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="#2ecc71"
+                                    stroke-width="3" [attr.stroke-dasharray]="getActiveTasksDashArray('completed')"
+                                    stroke-dashoffset="0"></circle>
+                            </svg>
+                        </div>
+                        <div class="chart-labels">
+                            <div class="label-item">
+                                <span class="dot completed"></span>
+                                <span>Completed: {{ (dashboardData()?.ActiveTasks?.Completed) || 0 }}</span>
+                            </div>
+                            <div class="label-item">
+                                <span class="dot in-progress"></span>
+                                <span>In progress: {{ (dashboardData()?.ActiveTasks?.InProgress) || 0 }}</span>
+                            </div>
+                            <div class="label-item">
+                                <span class="dot not-started"></span>
+                                <span>Not Started: {{ (dashboardData()?.ActiveTasks?.NotStarted) || 0 }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="project-completion-card">
+                <h3>Today</h3>
+                <p class="date">{{ getCurrentDate() }}</p>
+                <div class="alert-section">
+                    <div class="alert red-flag">
+                        <span class="label">Red Flag days</span>
+                        <span class="value">5 days</span>
+                    </div>
+                    <div class="alert red-flag-date">
+                        <span class="label">Red Flag date</span>
+                        <span class="value">Sat 28 Nov</span>
+                    </div>
+                    <div class="alert deadline">
+                        <span class="label">Deadline</span>
+                        <span class="value">Wed 21 Dec</span>
+                    </div>
+                </div>
+                <div class="project-completion">
+                    <h4>Project Completion</h4>
+                    <div class="completion-chart">
+                        <svg width="80" height="80" viewBox="0 0 42 42">
+                            <circle cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="#ecf0f1"
+                                stroke-width="3"></circle>
+                            <circle cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="#2ecc71"
+                                stroke-width="3"
+                                [attr.stroke-dasharray]="((dashboardData()?.ProjectCompletion?.CompletionPercentage) || 0) + ' 100'"
+                                stroke-dashoffset="25"></circle>
+                        </svg>
+                        <div class="completion-percentage">
+                            {{ (dashboardData()?.ProjectCompletion?.CompletionPercentage) || 0 }}%
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Side - Task Tables -->
+        <div class="tables-section">
+            @for (group of filteredTaskGroups(); track group.name) {
+            <div class="task-group">
+                <h4 class="group-title">{{ group.name }} ({{ group.tasks.length }} tasks)</h4>
+                <table class="task-table">
+                    <thead>
+                        <tr>
+                            <th>Who's on it?</th>
+                            <th>Work required</th>
+                            <th>Deadline</th>
+                            <th>% completed</th>
+                            <th>Status</th>
+                            <th>Sport</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (task of group.tasks; track task.Id) {
+                        <tr [class]="getTaskRowClass(task)">
+                            <td>{{ task.AssignedTo }}</td>
+                            <td>{{ task.WorkRequired }}</td>
+                            <td>{{ formatDate(task.Deadline) }}</td>
+                            <td>
+                                <div class="progress-container">
+                                    <div class="progress-bar">
+                                        <div class="progress-fill" [style.width.%]="task.PercentCompleted"></div>
+                                    </div>
+                                    <span class="progress-text">{{ task.PercentCompleted }}%</span>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="status-badge" [class]="getStatusClass(task.Status)">
+                                    {{ getStatusText(task.Status) }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="sport-badge" [attr.data-sport]="task.SportPlayed">
+                                    <i [class]="getSportIcon(task.SportPlayed)"></i>
+                                    {{ task.SportPlayed }}
+                                </span>
+                            </td>
+                        </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            }
+        </div>
+    </div>
+    }
+</div>
