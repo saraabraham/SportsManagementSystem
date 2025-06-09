@@ -295,6 +295,13 @@ export class TaskManagementComponent implements OnInit {
   }
 
   getEmptyFormData() {
+    const today = new Date();
+    // Format today's date as 'YYYY-MM-DD' for the input type="date"
+    const year = today.getFullYear();
+    const month = (today.getMonth() + 1).toString().padStart(2, '0'); // Months are 0-indexed
+    const day = today.getDate().toString().padStart(2, '0');
+    const defaultDeadline = `${year}-${month}-${day}`;
+
     return {
       name: '',
       customer: '',
@@ -302,13 +309,14 @@ export class TaskManagementComponent implements OnInit {
       sportPlayed: '',
       assignedTo: '',
       groupTask: '',
-      deadline: '',
+      deadline: defaultDeadline, // <--- Initialize with today's date
       status: TaskItemStatus.NotStarted,
       workRequired: 1,
       percentCompleted: 0,
       updates: ''
     };
   }
+
 
   formatDate(date: Date | string): string {
     const d = new Date(date);
@@ -324,6 +332,7 @@ export class TaskManagementComponent implements OnInit {
     const d = new Date(date);
     // Ensure d is a valid date object before calling toISOString
     if (isNaN(d.getTime())) {
+      console.warn("Attempted to format an invalid date for input:", date);
       return ''; // Return empty string for invalid dates
     }
     return d.toISOString().split('T')[0];

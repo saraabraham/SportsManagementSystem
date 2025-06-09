@@ -308,15 +308,25 @@
 }
 
 .form-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 20px;
-    margin-bottom: 20px;
+    .form-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        /* Use gap for consistent spacing between grid items (form-groups) */
+        gap: 20px;
+        /* This handles both horizontal and vertical spacing between form-groups */
+        margin-bottom: 20px;
+        /* Space before modal actions */
+    }
 }
 
 .form-group {
     display: flex;
     flex-direction: column;
+    position: relative;
+    /* IMPORTANT: Remove margin-bottom from form-group itself.
+       Spacing between form-groups is now handled by form-grid's gap. */
+    margin-bottom: 0;
+    box-sizing: border-box;
 }
 
 .form-group.full-width {
@@ -327,16 +337,31 @@
     margin-bottom: 5px;
     font-weight: 600;
     color: #2c3e50;
+    display: block;
 }
 
 .form-group input,
 .form-group select,
 .form-group textarea {
+    width: 100%;
+    /* Ensure width is 100% */
     padding: 10px 12px;
+    /* Use the larger padding for modal inputs */
     border: 2px solid #e9ecef;
+    /* Use the 2px border for modal inputs */
     border-radius: 6px;
     font-size: 0.9rem;
     transition: border-color 0.2s ease;
+    box-sizing: border-box;
+    /* Crucial for width calculation */
+
+    /* --- THESE ARE THE CRITICAL CHANGES FOR SPACING --- */
+    margin-top: 0;
+    /* Remove any top margin from the input itself */
+    margin-bottom: 0.25rem;
+    /* Add a small space AFTER the input, before the error message */
+    line-height: normal;
+    /* Ensure consistent line height */
 }
 
 .form-group input:focus,
@@ -405,6 +430,54 @@
     border-radius: 50%;
     animation: spin 1s linear infinite;
     margin: 0 auto 20px;
+}
+
+/* Style for invalid inputs */
+.form-group input.is-invalid,
+.form-group select.is-invalid,
+.form-group textarea.is-invalid {
+    border-color: #dc3545;
+    /* Bootstrap red for invalid */
+    box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+    /* Light red shadow */
+}
+
+/* Style for error messages */
+.form-group .error-message {
+    color: #dc3545;
+    font-size: 0.875em;
+    text-align: left;
+    display: block;
+    /* Ensure it's a block element */
+
+    margin-top: 0.1rem;
+    /* Small space just below the input (1.2px for you) */
+    padding: 0;
+    /* Ensure no internal padding */
+    line-height: normal;
+
+    /* --- CRITICAL CHANGE: This will create the space BELOW the error message --- */
+    /* This margin will only apply when the error message is visible, pushing the next field down. */
+    margin-bottom: 0.75rem;
+    /* Adjust this value. For 12px base, this is 9px. */
+    /* Try 0.5rem (6px), 0.75rem (9px), or 1rem (12px) to find what looks best. */
+}
+
+
+
+/* Ensure progress bar and updates preview don't get 'is-invalid' styling */
+.progress-container,
+.updates-cell {
+    border: none !important;
+    /* Override potential border from .is-invalid */
+    box-shadow: none !important;
+    /* Override potential shadow */
+}
+
+/* Adjust .modal-actions button styling if needed */
+.modal-actions button[disabled] {
+    opacity: 0.6;
+    cursor: not-allowed;
 }
 
 @keyframes spin {

@@ -155,33 +155,78 @@
                 <div class="form-grid">
                     <div class="form-group">
                         <label for="taskName">Task Name *</label>
-                        <input type="text" id="taskName" [(ngModel)]="formData.name" name="taskName" required>
+                        <input type="text" id="taskName" [(ngModel)]="formData().name" name="taskName" required
+                            #taskNameInput="ngModel"
+                            [ngClass]="{'is-invalid': taskNameInput.invalid && (taskNameInput.touched || taskNameInput.dirty)}">
+                        @if (taskNameInput.invalid && (taskNameInput.touched || taskNameInput.dirty)) {
+                        <div class="error-message">
+                            @if (taskNameInput.errors?.['required']) {
+                            <span>Task Name is required.</span>
+                            }
+                        </div>
+                        }
                     </div>
 
                     <div class="form-group">
                         <label for="customerName">Customer *</label>
-                        <input type="text" id="customerName" [(ngModel)]="formData.customer" name="customerName"
-                            required>
+                        <input type="text" id="customerName" [(ngModel)]="formData().customer" name="customerName"
+                            required #customerNameInput="ngModel"
+                            [ngClass]="{'is-invalid': customerNameInput.invalid && (customerNameInput.touched || customerNameInput.dirty)}">
+                        @if (customerNameInput.invalid && (customerNameInput.touched || customerNameInput.dirty)) {
+                        <div class="error-message">
+                            @if (customerNameInput.errors?.['required']) {
+                            <span>Customer Name is required.</span>
+                            }
+                        </div>
+                        }
                     </div>
 
                     <div class="form-group">
                         <label for="phoneNumber">Phone Number</label>
-                        <input type="tel" id="phoneNumber" [(ngModel)]="formData.phoneNo" name="phoneNumber">
+                        <input type="tel" id="phoneNumber" [(ngModel)]="formData().phoneNo" name="phoneNumber"
+                            #phoneNumberInput="ngModel"
+                            [ngClass]="{'is-invalid': phoneNumberInput.invalid && (phoneNumberInput.touched || phoneNumberInput.dirty)}">
+                        @if (phoneNumberInput.invalid && (phoneNumberInput.touched || phoneNumberInput.dirty)) {
+                        <div class="error-message">
+                            @if (phoneNumberInput.errors?.['required']) {
+                            <span>Customer Name is required.</span>
+                            }
+                        </div>
+                        }
+
                     </div>
 
                     <div class="form-group">
                         <label for="sport">Sport *</label>
-                        <select id="sport" [(ngModel)]="formData.sportPlayed" name="sport" required>
+                        <select id="sport" [(ngModel)]="formData().sportPlayed" name="sport" required
+                            #sportInput="ngModel"
+                            [ngClass]="{'is-invalid': sportInput.invalid && (sportInput.touched || sportInput.dirty)}">
                             <option value="">Select Sport</option>
                             @for (sport of sportsOptions; track sport) {
                             <option [value]="sport">{{ sport }}</option>
                             }
                         </select>
+                        @if (sportInput.invalid && (sportInput.touched || sportInput.dirty)) {
+                        <div class="error-message">
+                            @if (sportInput.errors?.['required']) {
+                            <span>Sport is required.</span>
+                            }
+                        </div>
+                        }
                     </div>
 
                     <div class="form-group">
                         <label for="assignee">Assigned To *</label>
-                        <input type="text" id="assignee" [(ngModel)]="formData.assignedTo" name="assignee" required>
+                        <input type="text" id="assignee" [(ngModel)]="formData().assignedTo" name="assignee" required
+                            #assigneeInput="ngModel"
+                            [ngClass]="{'is-invalid': assigneeInput.invalid && (assigneeInput.touched || assigneeInput.dirty)}">
+                        @if (assigneeInput.invalid && (assigneeInput.touched || assigneeInput.dirty)) {
+                        <div class="error-message">
+                            @if (assigneeInput.errors?.['required']) {
+                            <span>Assignee is required.</span>
+                            }
+                        </div>
+                        }
                     </div>
 
                     <div class="form-group">
@@ -191,7 +236,19 @@
 
                     <div class="form-group">
                         <label for="dueDate">Deadline *</label>
-                        <input type="date" id="dueDate" [(ngModel)]="formData.deadline" name="dueDate" required>
+                        <input type="date" id="dueDate" [(ngModel)]="formData().deadline" name="dueDate" required
+                            #dueDateInput="ngModel"
+                            [ngClass]="{'is-invalid': dueDateInput.invalid && (dueDateInput.touched || dueDateInput.dirty)}">
+                        @if (dueDateInput.invalid && (dueDateInput.touched || dueDateInput.dirty)) {
+                        <div class="error-message">
+                            @if (dueDateInput.errors?.['required']) {
+                            <span>Deadline is required.</span>
+                            }
+                            @if (dueDateInput.errors?.['matDatepickerParse'] ||
+                            dueDateInput.errors?.['matDatepickerMax'] || dueDateInput.errors?.['matDatepickerMin']) {
+                            }
+                        </div>
+                        }
                     </div>
 
                     <div class="form-group">
@@ -205,14 +262,41 @@
 
                     <div class="form-group">
                         <label for="hoursRequired">Work Required (hours)</label>
-                        <input type="number" id="hoursRequired" [(ngModel)]="formData.workRequired" name="hoursRequired"
-                            min="1">
+                        <input type="number" id="hoursRequired" [(ngModel)]="formData().workRequired"
+                            name="hoursRequired" min="1" #hoursRequiredInput="ngModel"
+                            [ngClass]="{'is-invalid': hoursRequiredInput.invalid && (hoursRequiredInput.touched || hoursRequiredInput.dirty)}">
+                        @if (hoursRequiredInput.invalid && (hoursRequiredInput.touched || hoursRequiredInput.dirty)) {
+                        <div class="error-message">
+                            @if (hoursRequiredInput.errors?.['min']) {
+                            <span>Work Required must be at least 1 hour.</span>
+                            }
+                            @if (hoursRequiredInput.errors?.['required']) {
+                            <span>Work Required is required.</span>
+                            }
+                        </div>
+                        }
                     </div>
 
                     <div class="form-group">
                         <label for="completionPercent">Progress (%)</label>
-                        <input type="number" id="completionPercent" [(ngModel)]="formData.PercentCompleted"
-                            name="completionPercent" min="0" max="100">
+                        <input type="number" id="completionPercent" [(ngModel)]="formData().percentCompleted"
+                            name="completionPercent" min="0" max="100" #completionPercentInput="ngModel"
+                            [ngClass]="{'is-invalid': completionPercentInput.invalid && (completionPercentInput.touched || completionPercentInput.dirty)}">
+                        @if (completionPercentInput.invalid && (completionPercentInput.touched ||
+                        completionPercentInput.dirty)) {
+                        <div class="error-message">
+                            @if (completionPercentInput.errors?.['min']) {
+                            <span>Progress cannot be less than 0%.</span>
+                            }
+                            @if (completionPercentInput.errors?.['max']) {
+                            <span>Progress cannot be more than 100%.</span>
+                            }
+                            @if (completionPercentInput.errors?.['required']) {
+                            <span>Progress is required.</span>
+                            }
+                        </div>
+                        }
+
                     </div>
                 </div>
 
@@ -224,7 +308,7 @@
 
                 <div class="modal-actions">
                     <button type="button" class="btn btn-secondary" (click)="closeModal()">Cancel</button>
-                    <button type="submit" class="btn btn-primary" [disabled]="!formRef.valid">
+                    <button type="submit" class="btn btn-primary" [disabled]="formRef.invalid">
                         {{ editingTask() ? 'Update Task' : 'Create Task' }}
                     </button>
                 </div>

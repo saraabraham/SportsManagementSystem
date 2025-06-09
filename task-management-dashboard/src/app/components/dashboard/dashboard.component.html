@@ -18,6 +18,7 @@
                 <label>Date Filter:</label>
                 <select [(ngModel)]="dateFilterType" (change)="onFilterChange()" title="Select a date filter type">
                     <option value="all">All Dates</option>
+                    <option value="today">Today</option>
                     <option value="single">Single Date</option>
                     <option value="range">Date Range</option>
                 </select>
