@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { DashboardService } from '../../services/dashboard.service';
 import { DashboardData, TaskItem, TaskGroup } from '../../models/task.model';
 import { TaskItemStatus } from '../../enums/task-item-status.enum';
+
 @Component({
   selector: 'app-dashboard',
   standalone: true,
@@ -14,23 +15,28 @@ import { TaskItemStatus } from '../../enums/task-item-status.enum';
 export class DashboardComponent implements OnInit {
   protected dashboardService = inject(DashboardService);
 
-  // Signals for component state
+  // Signals for component state (dashboard data is already a signal)
   public dashboardData = this.dashboardService.dashboardData;
 
-  // Date filter properties
-  dateFilterType = 'all';
-  singleDate = '';
-  fromDate = '';
-  toDate = '';
+  // Convert filter properties to signals
+  public dateFilterType = signal('all'); // 'all', 'single', 'range'
+  public statusFilterType = signal<TaskItemStatus | 'all'>('all'); // 'all' or specific TaskItemStatus enum value
+  public singleDate = signal('');
+  public fromDate = signal('');
+  public toDate = signal('');
+
+  // Expose TaskItemStatus enum to the template
+  protected readonly TaskItemStatus = TaskItemStatus;
 
   // Computed properties for filtered data
+  // This will now react to changes in the filter signals
   filteredTasks = computed(() => {
     const tasks = this.dashboardData()?.Tasks || [];
-    return this.filterTasksByDate(tasks);
+    return this.filterTasks(tasks); // Call the combined filter method
   });
 
   filteredTaskGroups = computed(() => {
-    const filteredTasks = this.filteredTasks();
+    const filteredTasks = this.filteredTasks(); // This is now reactive
     if (!filteredTasks.length) return [];
 
     const groups = filteredTasks.reduce((acc: Record<string, TaskItem[]>, task) => {
@@ -47,13 +53,22 @@ export class DashboardComponent implements OnInit {
   filteredTasksCount = computed(() => this.filteredTasks().length);
   totalTasksCount = computed(() => this.dashboardData()?.Tasks?.length || 0);
 
-  // Effect to handle data changes
+  // Effect to handle dashboard data changes
   private dataEffect = effect(() => {
     const data = this.dashboardData();
     if (data) {
       console.log('Dashboard data updated:', data);
     }
   });
+
+  // Optional effect to explicitly confirm filter signal reactivity
+  private filterReactivityEffect = effect(() => {
+    console.log('--- Filter reactivity effect triggered ---');
+    console.log('Current statusFilterType signal value:', this.statusFilterType());
+    console.log('Current dateFilterType signal value:', this.dateFilterType());
+    // The computed 'filteredTasks' should automatically re-evaluate when these change.
+  });
+
 
   ngOnInit(): void {
     this.loadDashboardData();
@@ -71,49 +86,117 @@ export class DashboardComponent implements OnInit {
     this.loadDashboardData();
   }
 
-  applyDateFilters(): void {
-    // Filters are applied automatically through computed signal
-    console.log('Date filters applied:', {
-      type: this.dateFilterType,
-      single: this.singleDate,
-      from: this.fromDate,
-      to: this.toDate
+  // Changed back to no arguments for simplicity as ngModel handles updates
+  onFilterChange(): void {
+    console.log('Filters changed:', {
+      dateType: this.dateFilterType(), // Access signal value
+      statusType: this.statusFilterType(), // Access signal value
+      single: this.singleDate(),
+      from: this.fromDate(),
+      to: this.toDate()
     });
+    // The computed 'filteredTasks' will automatically re-evaluate
   }
 
-  private filterTasksByDate(tasks: TaskItem[]): TaskItem[] {
-    if (this.dateFilterType === 'all') {
-      return tasks;
-    }
 
-    if (this.dateFilterType === 'pending') {
-      return tasks.filter(task =>
-        task.Status === TaskItemStatus.NotStarted ||
-        task.Status === TaskItemStatus.InProgress ||
-        task.Status === TaskItemStatus.Late
-      );
-    }
+  // The filter logic now reads the signal values directly
+  private filterTasks(tasks: TaskItem[]): TaskItem[] {
+    console.log('--- filterTasks called ---');
+    console.log('Initial tasks received by filterTasks:', tasks.length, tasks);
 
-    if (this.dateFilterType === 'single' && this.singleDate) {
-      const selectedDate = new Date(this.singleDate);
-      return tasks.filter(task => {
+    // Access signal values here
+    const dateType = this.dateFilterType();
+    const singleDateVal = this.singleDate();
+    const fromDateVal = this.fromDate();
+    const toDateVal = this.toDate();
+    const statusTypeVal = this.statusFilterType();
+
+    console.log('Current Date Filter Type:', dateType);
+    if (dateType === 'single') {
+      console.log('Single Date Input:', singleDateVal);
+    } else if (dateType === 'range') {
+      console.log('From Date Input:', fromDateVal);
+      console.log('To Date Input:', toDateVal);
+    }
+    console.log('Current Status Filter Type:', statusTypeVal);
+
+
+    let filtered = tasks;
+
+    // --- Apply Date Filter ---
+    if (dateType === 'single' && singleDateVal) {
+      console.log('Applying SINGLE DATE filter...');
+      const selectedDate = new Date(singleDateVal); // Correct: singleDateVal is a string
+      const selectedDateUTC = Date.UTC(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate());
+      console.log('Selected Date (parsed):', selectedDate);
+      console.log('Selected Date (UTC ms):', selectedDateUTC);
+
+
+      filtered = filtered.filter(task => {
         const taskDate = new Date(task.Deadline);
-        return taskDate.toDateString() === selectedDate.toDateString();
-      });
-    }
+        const taskDateUTC = Date.UTC(taskDate.getFullYear(), taskDate.getMonth(), taskDate.getDate());
 
-    if (this.dateFilterType === 'range' && this.fromDate && this.toDate) {
-      const from = new Date(this.fromDate);
-      const to = new Date(this.toDate);
-      return tasks.filter(task => {
+        console.log(`  Task ID: ${task.Id}, Name: ${task.Name}`);
+        console.log(`    Task Deadline String: "${task.Deadline}"`);
+        console.log(`    Task Deadline Parsed: ${taskDate}`);
+        console.log(`    Task Deadline UTC ms: ${taskDateUTC}`);
+
+        const isDateMatch = taskDateUTC === selectedDateUTC;
+        console.log(`    Date Match Result: ${isDateMatch}`);
+        return isDateMatch;
+      });
+      console.log('After SINGLE DATE filter, tasks remaining:', filtered.length, filtered);
+
+    } else if (dateType === 'range' && fromDateVal && toDateVal) {
+      console.log('Applying DATE RANGE filter...');
+      const from = new Date(fromDateVal); // Correct: fromDateVal is a string
+      const to = new Date(toDateVal);     // Correct: toDateVal is a string
+      const fromDateUTC = Date.UTC(from.getFullYear(), from.getMonth(), from.getDate());
+      const toDateUTC = Date.UTC(to.getFullYear(), to.getMonth(), to.getDate());
+
+      console.log('From Date (parsed):', from);
+      console.log('From Date (UTC ms):', fromDateUTC);
+      console.log('To Date (parsed):', to);
+      console.log('To Date (UTC ms):', toDateUTC);
+
+      filtered = filtered.filter(task => {
         const taskDate = new Date(task.Deadline);
-        return taskDate >= from && taskDate <= to;
+        const taskDateUTC = Date.UTC(taskDate.getFullYear(), taskDate.getMonth(), taskDate.getDate());
+
+        console.log(`  Task ID: ${task.Id}, Name: ${task.Name}`);
+        console.log(`    Task Deadline String: "${task.Deadline}"`);
+        console.log(`    Task Deadline Parsed: ${taskDate}`);
+        console.log(`    Task Deadline UTC ms: ${taskDateUTC}`);
+
+        const isRangeMatch = taskDateUTC >= fromDateUTC && taskDateUTC <= toDateUTC;
+        console.log(`    Range Match Result: ${isRangeMatch}`);
+        return isRangeMatch;
       });
+      console.log('After DATE RANGE filter, tasks remaining:', filtered.length, filtered);
+    } else if (dateType === 'all') {
+      console.log('Date Filter Type is ALL. No date filtering applied at this stage.');
     }
 
-    return tasks;
+
+    // --- Apply Status Filter (after date filter) ---
+    if (statusTypeVal !== 'all') {
+      console.log(`Applying STATUS filter for: ${statusTypeVal}`);
+      filtered = filtered.filter(task => {
+        const isStatusMatch = task.Status === statusTypeVal; // Correct: statusTypeVal is string/enum
+        console.log(`  Task ID: ${task.Id}, Name: ${task.Name}, Status: "${task.Status}", Filter Status: "${statusTypeVal}"`);
+        console.log(`    Status Match Result: ${isStatusMatch}`);
+        return isStatusMatch;
+      });
+      console.log('After STATUS filter, tasks remaining:', filtered.length, filtered);
+    } else {
+      console.log('Status Filter Type is ALL. No status filtering applied.');
+    }
+
+    console.log('Final filtered tasks count:', filtered.length);
+    console.log('Final filtered tasks array:', filtered);
+    console.log('--- filterTasks finished ---');
+    return filtered;
   }
-
   getCurrentDate(): string {
     const options: Intl.DateTimeFormatOptions = {
       weekday: 'short',
@@ -139,23 +222,31 @@ export class DashboardComponent implements OnInit {
         return 'late';
       case TaskItemStatus.Completed:
         return 'completed';
+      case TaskItemStatus.OnHold: // Add new cases for visual styling
+        return 'on-hold';
+      case TaskItemStatus.Cancelled:
+        return 'cancelled';
       default:
-        return '';
+        return ''; // No specific class for NotStarted, InProgress
     }
   }
 
   getStatusClass(status: TaskItemStatus): string {
     switch (status) {
       case TaskItemStatus.NotStarted:
-        return 'not-started';
+        return 'status-not-started';
       case TaskItemStatus.InProgress:
-        return 'in-progress';
+        return 'status-in-progress';
       case TaskItemStatus.Late:
-        return 'late';
+        return 'status-late';
       case TaskItemStatus.Completed:
-        return 'completed';
+        return 'status-completed';
+      case TaskItemStatus.OnHold:
+        return 'status-on-hold';
+      case TaskItemStatus.Cancelled:
+        return 'status-cancelled';
       default:
-        return 'not-started';
+        return 'status-unknown'; // Fallback for unknown status
     }
   }
 
@@ -169,8 +260,12 @@ export class DashboardComponent implements OnInit {
         return 'Late';
       case TaskItemStatus.Completed:
         return 'Completed';
+      case TaskItemStatus.OnHold:
+        return 'On Hold';
+      case TaskItemStatus.Cancelled:
+        return 'Cancelled';
       default:
-        return 'Unknown';
+        return 'Unknown Status'; // Fallback for unknown status
     }
   }
 
@@ -180,7 +275,7 @@ export class DashboardComponent implements OnInit {
       'Basketball': 'fas fa-basketball-ball',
       'Tennis': 'fas fa-table-tennis',
       'Swimming': 'fas fa-swimmer',
-      'Cricket': 'fas fa-baseball-ball',
+      'Cricket': 'fas fa-baseball-ball', // Using baseball for cricket icon
       'Running': 'fas fa-running',
       'Golf': 'fas fa-golf-ball',
       'Boxing': 'fas fa-fist-raised',
@@ -193,7 +288,7 @@ export class DashboardComponent implements OnInit {
       'Wrestling': 'fas fa-fist-raised',
       'Gymnastics': 'fas fa-child'
     };
-    return sportIcons[sport] || 'fas fa-trophy';
+    return sportIcons[sport] || 'fas fa-trophy'; // Default icon
   }
 
   getResourceWorkloadPercentage(type: 'done' | 'todo'): number {
@@ -214,7 +309,7 @@ export class DashboardComponent implements OnInit {
     const data = this.dashboardData();
     if (!data?.TaskCompletion) return '0 100';
 
-    const total = this.dashboardService.totalTasks();
+    const total = this.dashboardService.totalTasks(); // Assuming this is correct
     if (total === 0) return '0 100';
 
     if (type === 'onTrack') {

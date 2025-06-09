@@ -11,37 +11,48 @@
         <button class="btn btn-primary" (click)="retryLoad()">Retry</button>
     </div>
     } @else {
-    <!-- Date Filters Section -->
-    <div class="date-filters-section">
+    <div class="filter-section">
         <h3>Task Filters</h3>
         <div class="filter-controls">
             <div class="filter-group">
-                <label>Filter Type:</label>
-                <select [(ngModel)]="dateFilterType" (change)="applyDateFilters()" title="Select a filter type">
-                    <option value="all">All Tasks</option>
-                    <option value="pending">Pending Tasks Only</option>
+                <label>Date Filter:</label>
+                <select [(ngModel)]="dateFilterType" (change)="onFilterChange()" title="Select a date filter type">
+                    <option value="all">All Dates</option>
                     <option value="single">Single Date</option>
                     <option value="range">Date Range</option>
                 </select>
             </div>
 
-            @if (dateFilterType === 'single') {
+            <div class="filter-group">
+                <label>Status Filter:</label>
+                <select [(ngModel)]="statusFilterType" (change)="onFilterChange()" title="Select a task status">
+                    <option value="all">All Statuses</option>
+                    <option [value]="TaskItemStatus.NotStarted">Not Started</option>
+                    <option [value]="TaskItemStatus.InProgress">In Progress</option>
+                    <option [value]="TaskItemStatus.Completed">Completed</option>
+                    <option [value]="TaskItemStatus.Late">Late</option>
+                    <option [value]="TaskItemStatus.OnHold">On Hold</option>
+                    <option [value]="TaskItemStatus.Cancelled">Cancelled</option>
+                </select>
+            </div>
+
+            @if (dateFilterType() === 'single') {
             <div class="filter-group">
                 <label>Select Date:</label>
-                <input type="date" [(ngModel)]="singleDate" (change)="applyDateFilters()" title="Select a date"
+                <input type="date" [(ngModel)]="singleDate" (change)="onFilterChange()" title="Select a date"
                     placeholder="YYYY-MM-DD">
             </div>
             }
 
-            @if (dateFilterType === 'range') {
+            @if (dateFilterType() === 'range') {
             <div class="filter-group">
                 <label>From Date:</label>
-                <input type="date" [(ngModel)]="fromDate" (change)="applyDateFilters()" title="Select a start date"
+                <input type="date" [(ngModel)]="fromDate" (change)="onFilterChange()" title="Select a start date"
                     placeholder="YYYY-MM-DD">
             </div>
             <div class="filter-group">
                 <label>To Date:</label>
-                <input type="date" [(ngModel)]="toDate" (change)="applyDateFilters()" title="Select an end date"
+                <input type="date" [(ngModel)]="toDate" (change)="onFilterChange()" title="Select an end date"
                     placeholder="YYYY-MM-DD">
             </div>
             }
@@ -52,8 +63,9 @@
         </div>
     </div>
 
+
+
     <div class="dashboard-grid">
-        <!-- Left Side - Charts and Metrics -->
         <div class="charts-section">
             <div class="chart-row">
                 <div class="chart-card resource-workload">
@@ -181,7 +193,6 @@
             </div>
         </div>
 
-        <!-- Right Side - Task Tables -->
         <div class="tables-section">
             @for (group of filteredTaskGroups(); track group.name) {
             <div class="task-group">

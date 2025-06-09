@@ -6,38 +6,6 @@
         </button>
     </div>
 
-    <!-- DEBUG SECTION - Remove this after fixing -->
-    <div class="debug-section"
-        style="background: #f0f0f0; padding: 15px; margin: 15px 0; border: 2px solid #007bff; border-radius: 8px;">
-        <h4 style="color: #007bff; margin: 0 0 10px 0;">🔍 Task Management Debug Info</h4>
-        <div
-            style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; font-size: 14px;">
-            <div><strong>Loading:</strong> {{ dashboardService.loading() }}</div>
-            <div><strong>Error:</strong> {{ dashboardService.error() || 'None' }}</div>
-            <div><strong>Dashboard Data Exists:</strong> {{ !!dashboardService.dashboardData() }}</div>
-            <div><strong>Raw Tasks Count:</strong> {{ (dashboardService.dashboardData()?.Tasks?.length) || 0 }}</div>
-            <div><strong>Filtered Tasks Count:</strong> {{ filteredTasks().length }}</div>
-            <div><strong>Status Filter:</strong> "{{ statusFilter }}"</div>
-            <div><strong>Sport Filter:</strong> "{{ sportFilter }}"</div>
-            <div><strong>Search Term:</strong> "{{ searchTerm }}"</div>
-        </div>
-
-        <details style="margin-top: 10px;">
-            <summary style="cursor: pointer; color: #007bff; font-weight: bold;">Click to see first 2 tasks from
-                dashboard data</summary>
-            <pre
-                style="background: #fff; padding: 10px; border-radius: 4px; margin-top: 5px; font-size: 12px; max-height: 200px; overflow-y: auto;">{{ (dashboardService.dashboardData()?.Tasks?.slice(0, 2) | json) || 'No tasks data available' }}</pre>
-        </details>
-
-        <details style="margin-top: 5px;">
-            <summary style="cursor: pointer; color: #007bff; font-weight: bold;">Click to see first 2 filtered tasks
-            </summary>
-            <pre
-                style="background: #fff; padding: 10px; border-radius: 4px; margin-top: 5px; font-size: 12px; max-height: 200px; overflow-y: auto;">{{ (filteredTasks().slice(0, 2) | json) || 'No filtered tasks' }}</pre>
-        </details>
-    </div>
-    <!-- END DEBUG SECTION -->
-
     <!-- Filters -->
     <div class="filters-section">
         <div class="filter-group">

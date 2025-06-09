@@ -69,18 +69,17 @@ export interface TaskGroup {
 // DTO for creating/updating tasks
 export interface CreateTaskRequest {
     name: string;
-    assignedTo: string;
-    workRequired: number;
-    deadline: Date;
-    percentCompleted: number;
-    status: TaskItemStatus;
-    groupTask: string;
     customer: string;
-    phoneNo: string;
+    phoneNo?: string; // Make optional if it can be empty
     sportPlayed: string;
-    updates: string;
+    assignedTo: string;
+    groupTask?: string; // Make optional
+    deadline: string; // <--- CHANGE THIS FROM 'Date' to 'string'
+    status: string; // Or TaskItemStatus
+    workRequired: number;
+    percentCompleted: number;
+    updates?: string; // Make optional
 }
-
 // Common sports list for dropdown
 export const SPORTS_OPTIONS = [
     'Football',
