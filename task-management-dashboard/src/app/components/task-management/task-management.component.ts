@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal, computed } from '@angular/core';
+import { Component, OnInit, inject, signal, computed, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DashboardService } from '../../services/dashboard.service';
@@ -15,6 +15,7 @@ import { TaskItemStatus } from '../../enums/task-item-status.enum';
 })
 export class TaskManagementComponent implements OnInit {
   protected dashboardService = inject(DashboardService);
+  @Input() highlightedTaskId: number | null = null;
 
   // Signals for component state
   public showModal = signal(false); // Make public

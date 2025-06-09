@@ -1,0 +1,425 @@
+<div class="fixtures-container">
+    <!-- Header Section -->
+    <div class="header-section">
+        <div class="header-left">
+            <h2>Weekly Fixtures Schedule</h2>
+            <p class="week-info">
+                Week of {{ formatWeekRange() }}
+            </p>
+        </div>
+        <div class="header-actions">
+            <button class="btn btn-secondary" (click)="goToPreviousWeek()">
+                <i class="fas fa-chevron-left"></i> Previous Week
+            </button>
+            <button class="btn btn-primary" (click)="goToCurrentWeek()">
+                <i class="fas fa-calendar-day"></i> Current Week
+            </button>
+            <button class="btn btn-secondary" (click)="goToNextWeek()">
+                Next Week <i class="fas fa-chevron-right"></i>
+            </button>
+            <button class="btn btn-success" (click)="openCreateTimeSlotModal()">
+                <i class="fas fa-plus"></i> Add Time Slot
+            </button>
+        </div>
+    </div>
+
+    <!-- Sport Filter Section -->
+    <div class="filter-section">
+        <h3>Filter by Sport</h3>
+        <div class="filter-controls">
+            <div class="filter-group">
+                <label for="sportFilter">Select Sport:</label>
+                <select id="sportFilter" [(ngModel)]="selectedSport" (change)="onSportFilterChange()"
+                    class="sport-filter-select">
+                    <option value="">All Sports</option>
+                    @for (sport of getAvailableSports(); track sport) {
+                    <option [value]="sport">{{ sport }}</option>
+                    }
+                </select>
+            </div>
+            @if (selectedSport()) {
+            <div class="filter-group">
+                <button class="btn btn-secondary" (click)="clearSportFilter()">
+                    <i class="fas fa-times"></i> Clear Filter
+                </button>
+            </div>
+            }
+            <div class="filter-summary">
+                @if (selectedSport()) {
+                <span class="filter-result">
+                    <i class="fas fa-filter"></i>
+                    Showing fixtures for: <strong>{{ selectedSport() }}</strong>
+                </span>
+                } @else {
+                <span class="filter-result">
+                    <i class="fas fa-calendar-alt"></i>
+                    Showing all sports fixtures
+                </span>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading and Error States -->
+    @if (fixturesService.loading()) {
+    <div class="loading-spinner">
+        <div class="spinner"></div>
+        <p>Loading schedule...</p>
+    </div>
+    } @else if (fixturesService.error()) {
+    <div class="error-message">
+        <h3>Error loading schedule</h3>
+        <p>{{ fixturesService.error() }}</p>
+        <button class="btn btn-primary" (click)="loadCurrentWeek()">Retry</button>
+    </div>
+    } @else {
+    <!-- Weekly Schedule Grid -->
+    <div class="schedule-grid">
+        @for (day of getWeekDays(); track day.date.getTime()) {
+        <div class="day-column">
+            <div class="day-header" [class.today]="isToday(day.date)">
+                <h3>{{ day.name }}</h3>
+                <span class="date">{{ formatDate(day.date) }}</span>
+            </div>
+
+            <div class="time-slots">
+                @for (timeSlot of getTimeSlotsForDay(day.dayOfWeek); track timeSlot.id) {
+                <div class="time-slot-card" [attr.data-sport]="timeSlot.sport.toLowerCase()">
+                    <div class="time-slot-header">
+                        <div class="time-range">
+                            <i class="fas fa-clock"></i>
+                            {{ fixturesService.formatTimeRange(timeSlot.startTime, timeSlot.endTime) }}
+                        </div>
+                        <div class="sport-badge">
+                            <i [class]="getSportIcon(timeSlot.sport)"></i>
+                            {{ timeSlot.sport }}
+                        </div>
+                        <div class="actions">
+                            <button class="btn-icon" (click)="editTimeSlot(timeSlot)" title="Edit">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn-icon delete" (click)="deleteTimeSlot(timeSlot.id)" title="Delete">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    @if (timeSlot.location) {
+                    <div class="location">
+                        <i class="fas fa-map-marker-alt"></i>
+                        {{ timeSlot.location }}
+                    </div>
+                    }
+
+                    <div class="capacity-info">
+                        <span class="attendee-count">
+                            {{ timeSlot.attendees.length }}{{ timeSlot.maxCapacity ? '/' + timeSlot.maxCapacity : '' }}
+                            attendees
+                        </span>
+                        <span class="present-count">
+                            {{ getPresentCount(timeSlot) }} present
+                        </span>
+                    </div>
+
+                    <div class="attendees-section">
+                        <div class="attendees-header">
+                            <span>Attendees</span>
+                            <button class="btn-small" (click)="openAddAttendeeModal(timeSlot)">
+                                <i class="fas fa-user-plus"></i> Add
+                            </button>
+                        </div>
+
+                        <div class="attendees-list">
+                            @for (attendee of timeSlot.attendees; track attendee.id) {
+                            <div class="attendee-item" [class.present]="attendee.isPresent"
+                                [class.has-tasks]="(attendee.pendingTasksCount || 0) > 0"
+                                [class.hovered]="isAttendeeHovered(attendee.id)"
+                                (mouseenter)="onAttendeeHover(attendee, $event)" (mouseleave)="onAttendeeLeave()">
+
+                                <div class="attendee-info">
+                                    <div class="attendee-name">
+                                        {{ attendee.name }}
+                                        @if ((attendee.pendingTasksCount || 0) > 0) {
+                                        <span class="task-count-badge"
+                                            [attr.title]="selectedSport() ? 'Pending ' + selectedSport() + ' tasks' : 'Pending tasks'">
+                                            {{ attendee.pendingTasksCount }}
+                                        </span>
+                                        }
+                                    </div>
+                                    @if (attendee.isPresent && attendee.checkedInAt) {
+                                    <div class="check-in-time">
+                                        Checked in at {{ formatTime(attendee.checkedInAt) }}
+                                    </div>
+                                    }
+                                </div>
+
+                                <div class="attendee-actions">
+                                    <button class="attendance-toggle" [class.present]="attendee.isPresent"
+                                        title="Toggle attendance"
+                                        (click)="toggleAttendance(timeSlot.id, attendee, $event)">
+                                        <i [class]="attendee.isPresent ? 'fas fa-check-circle' : 'far fa-circle'"></i>
+                                    </button>
+                                    <button class="btn-icon-small delete"
+                                        (click)="removeAttendee(timeSlot.id, attendee.id, $event)"
+                                        title="Remove attendee">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+
+                                <!-- Simple hover tooltip positioned near the element -->
+                                @if (isAttendeeHovered(attendee.id) && getHoverTasks().length > 0) {
+                                <div class="tasks-hover-tooltip">
+                                    <div class="tooltip-header">
+                                        @if (selectedSport()) {
+                                        <span>{{ selectedSport() }} Tasks for {{ attendee.name }}</span>
+                                        } @else {
+                                        <span>Pending Tasks for {{ attendee.name }}</span>
+                                        }
+                                        <small>({{ getHoverTasks().length }} task{{ getHoverTasks().length === 1 ? '' :
+                                            's' }})</small>
+                                    </div>
+
+                                    <div class="tooltip-tasks">
+                                        @for (task of getHoverTasks(); track getTaskId(task)) {
+                                        <div class="tooltip-task-item" [class]="getTaskPriorityClass(task)"
+                                            (click)="onTaskClick(getTaskId(task), $event)"
+                                            [attr.title]="'Click to view in Task Management'">
+
+                                            <div class="task-summary">
+                                                <span class="task-name">{{ getTaskName(task) }}</span>
+                                                <span class="task-status"
+                                                    [class]="getTaskStatusClass(getTaskStatus(task))">
+                                                    {{ getTaskStatusText(getTaskStatus(task)) }}
+                                                </span>
+                                            </div>
+
+                                            <div class="task-details">
+                                                <span class="task-customer">{{ getTaskCustomer(task) }}</span>
+                                                <span class="task-deadline">Due: {{
+                                                    formatTaskDate(getTaskDeadline(task)) }}</span>
+                                                <span class="task-progress">{{ getTaskPercentCompleted(task) }}%
+                                                    done</span>
+                                            </div>
+                                        </div>
+                                        }
+                                    </div>
+
+                                    <div class="tooltip-footer">
+                                        <small>
+                                            <i class="fas fa-mouse-pointer"></i>
+                                            Click any task to view in Task Management
+                                        </small>
+                                    </div>
+                                </div>
+                                }
+                            </div>
+                            }
+
+                            @if (timeSlot.attendees.length === 0) {
+                            <div class="no-attendees">
+                                <i class="fas fa-users"></i>
+                                <span>No attendees yet</span>
+                            </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+                }
+
+                @if (getTimeSlotsForDay(day.dayOfWeek).length === 0) {
+                <div class="no-slots">
+                    <i class="fas fa-calendar-plus"></i>
+                    @if (selectedSport()) {
+                    <span>No {{ selectedSport().toLowerCase() }} slots scheduled</span>
+                    } @else {
+                    <span>No time slots scheduled</span>
+                    }
+                </div>
+                }
+            </div>
+        </div>
+        }
+    </div>
+    }
+
+    <!-- Create/Edit Time Slot Modal -->
+    @if (showTimeSlotModal()) {
+    <div class="modal-overlay" (click)="closeTimeSlotModal()">
+        <div class="modal-content" (click)="$event.stopPropagation()">
+            <div class="modal-header">
+                <h3>{{ editingTimeSlot() ? 'Edit Time Slot' : 'Create New Time Slot' }}</h3>
+                <button class="close-btn" (click)="closeTimeSlotModal()">×</button>
+            </div>
+
+            <form class="modal-body" (ngSubmit)="saveTimeSlot()" #timeSlotForm="ngForm">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="dayOfWeek">Day of Week *</label>
+                        <select id="dayOfWeek" [(ngModel)]="timeSlotFormData.dayOfWeek" name="dayOfWeek" required>
+                            <option value="">Select Day</option>
+                            @for (day of daysOfWeek; track day) {
+                            <option [value]="day">{{ day }}</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="sport">Sport *</label>
+                        <select id="sport" [(ngModel)]="timeSlotFormData.sport" name="sport" required>
+                            <option value="">Select Sport</option>
+                            @for (sport of sportsOptions; track sport) {
+                            <option [value]="sport">{{ sport }}</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="startTime">Start Time *</label>
+                        <input type="time" id="startTime" [(ngModel)]="timeSlotFormData.startTime" name="startTime"
+                            required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="endTime">End Time *</label>
+                        <input type="time" id="endTime" [(ngModel)]="timeSlotFormData.endTime" name="endTime" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="maxCapacity">Max Capacity</label>
+                        <input type="number" id="maxCapacity" [(ngModel)]="timeSlotFormData.maxCapacity"
+                            name="maxCapacity" min="1" max="100">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="location">Location</label>
+                        <input type="text" id="location" [(ngModel)]="timeSlotFormData.location" name="location"
+                            placeholder="e.g., Main Field, Court A">
+                    </div>
+                </div>
+
+                <div class="form-group full-width">
+                    <label for="notes">Notes</label>
+                    <textarea id="notes" [(ngModel)]="timeSlotFormData.notes" name="notes" rows="3"
+                        placeholder="Additional notes or instructions..."></textarea>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" (click)="closeTimeSlotModal()">Cancel</button>
+                    <button type="submit" class="btn btn-success" [disabled]="!timeSlotForm.valid">
+                        {{ editingTimeSlot() ? 'Update' : 'Create' }} Time Slot
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    }
+
+    <!-- Add Attendee Modal -->
+    @if (showAttendeeModal()) {
+    <div class="modal-overlay" (click)="closeAttendeeModal()">
+        <div class="modal-content small" (click)="$event.stopPropagation()">
+            <div class="modal-header">
+                <h3>Add Attendee</h3>
+                <button class="close-btn" (click)="closeAttendeeModal()">×</button>
+            </div>
+
+            <form class="modal-body" (ngSubmit)="saveAttendee()" #attendeeForm="ngForm">
+                <div class="form-group">
+                    <label for="attendeeName">Name *</label>
+                    <input type="text" id="attendeeName" [(ngModel)]="attendeeFormData.name" name="attendeeName"
+                        required placeholder="Enter attendee name">
+                </div>
+
+                <div class="form-group">
+                    <label for="attendeeEmail">Email</label>
+                    <input type="email" id="attendeeEmail" [(ngModel)]="attendeeFormData.email" name="attendeeEmail"
+                        placeholder="attendee@example.com">
+                </div>
+
+                <div class="form-group">
+                    <label for="attendeePhone">Phone</label>
+                    <input type="tel" id="attendeePhone" [(ngModel)]="attendeeFormData.phone" name="attendeePhone"
+                        placeholder="+1-xxx-xxx-xxxx">
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" (click)="closeAttendeeModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary" [disabled]="!attendeeForm.valid">
+                        Add Attendee
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    }
+
+    <!-- Attendee Tasks Modal -->
+    @if (showTasksModal()) {
+    <div class="modal-overlay" (click)="closeTasksModal()">
+        <div class="modal-content" (click)="$event.stopPropagation()">
+            <div class="modal-header">
+                <h3>
+                    @if (selectedSport()) {
+                    {{ selectedSport() }} Tasks for {{ selectedAttendee()?.name }}
+                    } @else {
+                    Pending Tasks for {{ selectedAttendee()?.name }}
+                    }
+                </h3>
+                <button class="close-btn" (click)="closeTasksModal()">×</button>
+            </div>
+
+            <div class="modal-body">
+                @if (attendeeTasks().length > 0) {
+                <div class="tasks-list">
+                    @for (task of attendeeTasks(); track getTaskId(task)) {
+                    <div class="task-item" [class]="getTaskStatusClass(getTaskStatus(task))">
+                        <div class="task-header">
+                            <h4>{{ getTaskName(task) }}</h4>
+                            <span class="status-badge" [class]="getTaskStatusClass(getTaskStatus(task))">
+                                {{ getTaskStatusText(getTaskStatus(task)) }}
+                            </span>
+                        </div>
+                        <div class="task-details">
+                            <div class="task-info">
+                                <span><i class="fas fa-user"></i> {{ getTaskCustomer(task) }}</span>
+                                <span><i class="fas fa-calendar"></i> Due: {{ formatTaskDate(getTaskDeadline(task))
+                                    }}</span>
+                                <span><i class="fas fa-trophy"></i> {{ getTaskSportPlayed(task) }}</span>
+                            </div>
+                            <div class="task-progress">
+                                <div class="progress-bar">
+                                    <div class="progress-fill" [style.width.%]="getTaskPercentCompleted(task)"></div>
+                                </div>
+                                <span>{{ getTaskPercentCompleted(task) }}% complete</span>
+                            </div>
+                        </div>
+                        @if (getTaskUpdates(task)) {
+                        <div class="task-updates">
+                            <strong>Latest Update:</strong> {{ getTaskUpdates(task) }}
+                        </div>
+                        }
+                    </div>
+                    }
+                </div>
+                } @else {
+                <div class="no-tasks">
+                    <i class="fas fa-check-circle"></i>
+                    @if (selectedSport()) {
+                    <h4>No pending {{ selectedSport().toLowerCase() }} tasks!</h4>
+                    <p>{{ selectedAttendee()?.name }} is all caught up with {{ selectedSport().toLowerCase() }} tasks.
+                    </p>
+                    } @else {
+                    <h4>No pending tasks!</h4>
+                    <p>{{ selectedAttendee()?.name }} is all caught up.</p>
+                    }
+                </div>
+                }
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn btn-secondary" (click)="closeTasksModal()">Close</button>
+            </div>
+        </div>
+    </div>
+    }
+</div>

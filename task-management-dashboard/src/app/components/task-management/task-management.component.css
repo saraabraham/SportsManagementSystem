@@ -480,6 +480,149 @@
     cursor: not-allowed;
 }
 
+/* Add these updated styles to your fixtures.component.css */
+
+/* Tasks Hover Tooltip - Enhanced Z-Index and Positioning */
+.tasks-hover-tooltip {
+    position: fixed;
+    /* Changed from absolute to fixed */
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    /* Center the tooltip */
+    background: white;
+    border: 1px solid #e1e8ed;
+    border-radius: 8px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+    /* Enhanced shadow */
+    z-index: 9999;
+    /* Very high z-index */
+    min-width: 350px;
+    max-width: 450px;
+    animation: tooltipFadeIn 0.2s ease-out;
+    overflow: hidden;
+    /* Ensure it's above everything */
+    position: fixed !important;
+}
+
+/* Alternative positioning for larger screens */
+@media (min-width: 1200px) {
+    .tasks-hover-tooltip {
+        position: absolute;
+        left: calc(100% + 15px);
+        /* Position to the right of the attendee item */
+        top: 0;
+        transform: none;
+        z-index: 9999;
+    }
+
+    /* If tooltip would go off screen, position to the left */
+    .attendee-item:nth-last-child(-n+2) .tasks-hover-tooltip {
+        left: auto;
+        right: calc(100% + 15px);
+    }
+}
+
+/* Ensure the parent container has proper stacking context */
+.day-column {
+    position: relative;
+    z-index: 1;
+}
+
+.time-slot-card {
+    position: relative;
+    z-index: 2;
+}
+
+.attendee-item {
+    position: relative;
+    z-index: 3;
+}
+
+/* When tooltip is shown, ensure the attendee item has highest z-index */
+.attendee-item:has(.tasks-hover-tooltip) {
+    z-index: 9998;
+}
+
+/* Enhanced backdrop for mobile */
+@media (max-width: 768px) {
+    .tasks-hover-tooltip {
+        position: fixed;
+        left: 5%;
+        right: 5%;
+        top: 50%;
+        transform: translateY(-50%);
+        margin: 0;
+        max-width: none;
+        max-height: 70vh;
+        z-index: 9999;
+        /* Add a subtle backdrop */
+        -webkit-backdrop-filter: blur(2px);
+        backdrop-filter: blur(2px);
+    }
+
+    /* Add backdrop overlay for mobile */
+    .tasks-hover-tooltip::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.1);
+        z-index: -1;
+    }
+}
+
+/* Ensure schedule grid doesn't create stacking context issues */
+.schedule-grid {
+    position: relative;
+    z-index: 1;
+}
+
+/* Override any potential z-index conflicts */
+.fixtures-container * {
+    /* Reset z-index for most elements */
+}
+
+.fixtures-container .tasks-hover-tooltip {
+    z-index: 9999 !important;
+    position: fixed !important;
+}
+
+/* Additional fallback positioning */
+.attendee-item.hovered {
+    z-index: 9998;
+}
+
+/* Smooth fade in animation */
+@keyframes tooltipFadeIn {
+    from {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.9);
+    }
+
+    to {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+    }
+}
+
+/* For larger screens, use different animation */
+@media (min-width: 1200px) {
+    @keyframes tooltipFadeIn {
+        from {
+            opacity: 0;
+            transform: translateX(-10px) scale(0.95);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateX(0) scale(1);
+        }
+    }
+}
+
 @keyframes spin {
     0% {
         transform: rotate(0deg);

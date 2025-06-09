@@ -1,4 +1,3 @@
-/* src/app/app.component.css */
 .app-container {
     min-height: 100vh;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -46,7 +45,7 @@
     background: rgba(255, 255, 255, 0.1);
     border-radius: 50px;
     padding: 4px;
-    max-width: 400px;
+    max-width: 600px;
     margin: 0 auto;
 }
 
@@ -87,6 +86,63 @@
     padding: 30px 20px;
     max-width: 1600px;
     margin: 0 auto;
+}
+
+/* Add these styles to your app.component.css */
+
+/* Navigation highlight badge */
+.highlight-badge {
+    background: #e74c3c;
+    color: white;
+    border-radius: 50%;
+    width: 18px;
+    height: 18px;
+    font-size: 0.7rem;
+    font-weight: bold;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 6px;
+    animation: pulse-badge 1s infinite;
+}
+
+@keyframes pulse-badge {
+    0% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.1);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+}
+
+/* Task highlight effect in task management */
+.task-highlighted {
+    background: linear-gradient(90deg, rgba(52, 152, 219, 0.2), rgba(52, 152, 219, 0.1)) !important;
+    border-left: 4px solid #3498db !important;
+    animation: highlight-fade 3s ease-out;
+}
+
+@keyframes highlight-fade {
+    0% {
+        background: rgba(52, 152, 219, 0.3);
+        transform: scale(1.02);
+    }
+
+    100% {
+        background: rgba(52, 152, 219, 0.1);
+        transform: scale(1);
+    }
+}
+
+/* Enhanced nav tab for active state with notification */
+.nav-tab.active .highlight-badge {
+    background: rgba(255, 255, 255, 0.9);
+    color: #3498db;
 }
 
 @media (max-width: 768px) {

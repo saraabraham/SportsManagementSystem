@@ -1,3 +1,5 @@
+<!-- src/app/app.component.html - Updated with navigation events -->
+
 <div class="app-container">
   <header class="header">
     <div class="header-content">
@@ -12,6 +14,13 @@
       <button class="nav-tab" [class.active]="activeTab() === 'tasks'" (click)="setActiveTab('tasks')">
         <i class="fas fa-tasks"></i>
         Task Management
+        @if (highlightedTaskId()) {
+        <span class="highlight-badge">!</span>
+        }
+      </button>
+      <button class="nav-tab" [class.active]="activeTab() === 'fixtures'" (click)="setActiveTab('fixtures')">
+        <i class="fas fa-calendar-alt"></i>
+        Fixtures
       </button>
     </nav>
   </header>
@@ -20,7 +29,9 @@
     @if (activeTab() === 'dashboard') {
     <app-dashboard />
     } @else if (activeTab() === 'tasks') {
-    <app-task-management />
+    <app-task-management [highlightedTaskId]="highlightedTaskId()" />
+    } @else if (activeTab() === 'fixtures') {
+    <app-fixtures (navigateToTask)="onNavigateToTask($event)" (switchToTaskManagement)="onSwitchToTaskManagement()" />
     }
   </main>
 </div>
