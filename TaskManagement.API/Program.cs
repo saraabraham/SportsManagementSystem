@@ -1,12 +1,35 @@
-// Program.cs - Simplified version without health checks
+// Update your Program.cs with this enhanced JSON configuration:
+
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Mvc; // Added for ApiBehaviorOptions
 using TaskManagement.Data;
 using TaskManagement.Services;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container
-builder.Services.AddControllers();
+// Add services to the container with enhanced JSON configuration
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        // Configure JSON serialization for better enum and property handling
+        options.JsonSerializerOptions.PropertyNamingPolicy = null; // Keep original property names (PascalCase)
+        options.JsonSerializerOptions.PropertyNameCaseInsensitive = true; // Allow case insensitive matching
+        options.JsonSerializerOptions.WriteIndented = true; // Pretty print JSON in responses
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()); // Handle enums as strings
+        options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull; // Ignore null values
+        options.JsonSerializerOptions.AllowTrailingCommas = true; // Allow trailing commas in JSON
+        // Removed unsupported JsonCommentHandling configuration
+    });
+
+// Configure model validation
+builder.Services.Configure<ApiBehaviorOptions>(options =>
+{
+    // Disable automatic 400 responses for model validation errors
+    // We want to handle them manually in our controllers
+    options.SuppressModelStateInvalidFilter = false;
+});
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -38,8 +61,9 @@ builder.Services.AddCors(options =>
         if (builder.Environment.IsDevelopment())
         {
             policy.WithOrigins("http://localhost:4200")
-                  .AllowAnyHeader()
-                  .AllowAnyMethod();
+                .AllowAnyHeader()
+                .AllowAnyMethod()
+                .AllowCredentials();
         }
         else
         {
@@ -64,6 +88,7 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
+    app.UseDeveloperExceptionPage();
 }
 else
 {

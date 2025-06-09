@@ -5,10 +5,10 @@ import { DashboardService } from '../../services/dashboard.service';
 import { DashboardData, TaskItem, TaskStatus, TaskGroup } from '../../models/task.model';
 
 @Component({
-    selector: 'app-dashboard',
-    standalone: true,
-    imports: [CommonModule, FormsModule],
-    template: `
+  selector: 'app-dashboard',
+  standalone: true,
+  imports: [CommonModule, FormsModule],
+  template: `
     <div class="dashboard-container">
       @if (dashboardService.loading()) {
         <div class="loading-spinner">
@@ -22,6 +22,44 @@ import { DashboardData, TaskItem, TaskStatus, TaskGroup } from '../../models/tas
           <button class="btn btn-primary" (click)="retryLoad()">Retry</button>
         </div>
       } @else {
+        <!-- Date Filters Section -->
+        <div class="date-filters-section">
+          <h3>Task Filters</h3>
+          <div class="filter-controls">
+            <div class="filter-group">
+              <label>Filter Type:</label>
+              <select [(ngModel)]="dateFilterType" (change)="applyDateFilters()">
+                <option value="all">All Tasks</option>
+                <option value="pending">Pending Tasks Only</option>
+                <option value="single">Single Date</option>
+                <option value="range">Date Range</option>
+              </select>
+            </div>
+
+            @if (dateFilterType === 'single') {
+              <div class="filter-group">
+                <label>Select Date:</label>
+                <input type="date" [(ngModel)]="singleDate" (change)="applyDateFilters()">
+              </div>
+            }
+
+            @if (dateFilterType === 'range') {
+              <div class="filter-group">
+                <label>From Date:</label>
+                <input type="date" [(ngModel)]="fromDate" (change)="applyDateFilters()">
+              </div>
+              <div class="filter-group">
+                <label>To Date:</label>
+                <input type="date" [(ngModel)]="toDate" (change)="applyDateFilters()">
+              </div>
+            }
+
+            <div class="filter-summary">
+              <span class="filter-result">Showing {{ filteredTasksCount() }} of {{ totalTasksCount() }} tasks</span>
+            </div>
+          </div>
+        </div>
+
         <div class="dashboard-grid">
           <!-- Left Side - Charts and Metrics -->
           <div class="charts-section">
@@ -40,8 +78,8 @@ import { DashboardData, TaskItem, TaskStatus, TaskGroup } from '../../models/tas
                   <div class="resource-icons">
                     @for (resource of dashboardData()?.resources; track resource.id) {
                       <div class="icon-group">
-                        <i class="fas fa-user" 
-                           [class.busy]="resource.status === 'Busy'" 
+                        <i class="fas fa-user"
+                           [class.busy]="resource.status === 'Busy'"
                            [class.overloaded]="resource.status === 'Overloaded'"></i>
                       </div>
                     }
@@ -58,13 +96,13 @@ import { DashboardData, TaskItem, TaskStatus, TaskGroup } from '../../models/tas
                 <div class="donut-chart">
                   <div class="donut-container">
                     <svg width="120" height="120" viewBox="0 0 42 42">
-                      <circle cx="21" cy="21" r="15.91549430918954" fill="transparent" 
-                              stroke="#ff6b6b" stroke-width="3" 
-                              [attr.stroke-dasharray]="getTaskCompletionDashArray('late')" 
+                      <circle cx="21" cy="21" r="15.91549430918954" fill="transparent"
+                              stroke="#ff6b6b" stroke-width="3"
+                              [attr.stroke-dasharray]="getTaskCompletionDashArray('late')"
                               stroke-dashoffset="25"></circle>
-                      <circle cx="21" cy="21" r="15.91549430918954" fill="transparent" 
-                              stroke="#4ecdc4" stroke-width="3" 
-                              [attr.stroke-dasharray]="getTaskCompletionDashArray('onTrack')" 
+                      <circle cx="21" cy="21" r="15.91549430918954" fill="transparent"
+                              stroke="#4ecdc4" stroke-width="3"
+                              [attr.stroke-dasharray]="getTaskCompletionDashArray('onTrack')"
                               stroke-dashoffset="0"></circle>
                     </svg>
                     <div class="donut-center">
@@ -89,17 +127,17 @@ import { DashboardData, TaskItem, TaskStatus, TaskGroup } from '../../models/tas
                 <div class="donut-chart">
                   <div class="donut-container">
                     <svg width="120" height="120" viewBox="0 0 42 42">
-                      <circle cx="21" cy="21" r="15.91549430918954" fill="transparent" 
-                              stroke="#95a5a6" stroke-width="3" 
-                              [attr.stroke-dasharray]="getActiveTasksDashArray('notStarted')" 
+                      <circle cx="21" cy="21" r="15.91549430918954" fill="transparent"
+                              stroke="#95a5a6" stroke-width="3"
+                              [attr.stroke-dasharray]="getActiveTasksDashArray('notStarted')"
                               stroke-dashoffset="75"></circle>
-                      <circle cx="21" cy="21" r="15.91549430918954" fill="transparent" 
-                              stroke="#3498db" stroke-width="3" 
-                              [attr.stroke-dasharray]="getActiveTasksDashArray('inProgress')" 
+                      <circle cx="21" cy="21" r="15.91549430918954" fill="transparent"
+                              stroke="#3498db" stroke-width="3"
+                              [attr.stroke-dasharray]="getActiveTasksDashArray('inProgress')"
                               stroke-dashoffset="50"></circle>
-                      <circle cx="21" cy="21" r="15.91549430918954" fill="transparent" 
-                              stroke="#2ecc71" stroke-width="3" 
-                              [attr.stroke-dasharray]="getActiveTasksDashArray('completed')" 
+                      <circle cx="21" cy="21" r="15.91549430918954" fill="transparent"
+                              stroke="#2ecc71" stroke-width="3"
+                              [attr.stroke-dasharray]="getActiveTasksDashArray('completed')"
                               stroke-dashoffset="0"></circle>
                     </svg>
                   </div>
@@ -142,11 +180,11 @@ import { DashboardData, TaskItem, TaskStatus, TaskGroup } from '../../models/tas
                 <h4>Project Completion</h4>
                 <div class="completion-chart">
                   <svg width="80" height="80" viewBox="0 0 42 42">
-                    <circle cx="21" cy="21" r="15.91549430918954" fill="transparent" 
+                    <circle cx="21" cy="21" r="15.91549430918954" fill="transparent"
                             stroke="#ecf0f1" stroke-width="3"></circle>
-                    <circle cx="21" cy="21" r="15.91549430918954" fill="transparent" 
-                            stroke="#2ecc71" stroke-width="3" 
-                            [attr.stroke-dasharray]="((dashboardData()?.projectCompletion?.completionPercentage) || 0) + ' 100'" 
+                    <circle cx="21" cy="21" r="15.91549430918954" fill="transparent"
+                            stroke="#2ecc71" stroke-width="3"
+                            [attr.stroke-dasharray]="((dashboardData()?.projectCompletion?.completionPercentage) || 0) + ' 100'"
                             stroke-dashoffset="25"></circle>
                   </svg>
                   <div class="completion-percentage">
@@ -159,9 +197,9 @@ import { DashboardData, TaskItem, TaskStatus, TaskGroup } from '../../models/tas
 
           <!-- Right Side - Task Tables -->
           <div class="tables-section">
-            @for (group of dashboardService.taskGroups(); track group.name) {
+            @for (group of filteredTaskGroups(); track group.name) {
               <div class="task-group">
-                <h4 class="group-title">{{ group.name }}</h4>
+                <h4 class="group-title">{{ group.name }} ({{ group.tasks.length }} tasks)</h4>
                 <table class="task-table">
                   <thead>
                     <tr>
@@ -170,6 +208,7 @@ import { DashboardData, TaskItem, TaskStatus, TaskGroup } from '../../models/tas
                       <th>Deadline</th>
                       <th>% completed</th>
                       <th>Status</th>
+                      <th>Sport</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -191,6 +230,12 @@ import { DashboardData, TaskItem, TaskStatus, TaskGroup } from '../../models/tas
                             {{ getStatusText(task.status) }}
                           </span>
                         </td>
+                        <td>
+                          <span class="sport-badge" [attr.data-sport]="task.sportPlayed">
+                            <i [class]="getSportIcon(task.sportPlayed)"></i>
+                            {{ task.sportPlayed }}
+                          </span>
+                        </td>
                       </tr>
                     }
                   </tbody>
@@ -202,7 +247,7 @@ import { DashboardData, TaskItem, TaskStatus, TaskGroup } from '../../models/tas
       }
     </div>
   `,
-    styles: [`
+  styles: [`
     .dashboard-container {
       max-width: 1400px;
       margin: 0 auto;
@@ -210,6 +255,71 @@ import { DashboardData, TaskItem, TaskStatus, TaskGroup } from '../../models/tas
       border-radius: 15px;
       padding: 30px;
       box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    }
+
+    .date-filters-section {
+      background: #34495e;
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 30px;
+      color: white;
+    }
+
+    .date-filters-section h3 {
+      margin: 0 0 15px 0;
+      color: #ecf0f1;
+      font-size: 1.2rem;
+    }
+
+    .filter-controls {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      align-items: end;
+    }
+
+    .filter-group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .filter-group label {
+      margin-bottom: 5px;
+      font-size: 0.9rem;
+      color: #bdc3c7;
+      font-weight: 500;
+    }
+
+    .filter-group select,
+    .filter-group input {
+      padding: 8px 12px;
+      border: 2px solid #5a6c7d;
+      border-radius: 6px;
+      background: white;
+      color: #2c3e50;
+      font-size: 0.9rem;
+    }
+
+    .filter-group select:focus,
+    .filter-group input:focus {
+      outline: none;
+      border-color: #3498db;
+      box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.3);
+    }
+
+    .filter-summary {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(52, 152, 219, 0.2);
+      border-radius: 6px;
+      padding: 10px;
+    }
+
+    .filter-result {
+      font-weight: 600;
+      color: #3498db;
+      font-size: 0.9rem;
     }
 
     .loading-spinner {
@@ -602,12 +712,30 @@ import { DashboardData, TaskItem, TaskStatus, TaskGroup } from '../../models/tas
       color: white;
     }
 
+    .sport-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 8px;
+      background: #f8f9fa;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: #2c3e50;
+      border: 1px solid #e9ecef;
+    }
+
+    .sport-badge i {
+      font-size: 0.8rem;
+      color: #3498db;
+    }
+
     @media (max-width: 1200px) {
       .dashboard-grid {
         grid-template-columns: 1fr;
         gap: 20px;
       }
-      
+
       .chart-row {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -619,166 +747,265 @@ import { DashboardData, TaskItem, TaskStatus, TaskGroup } from '../../models/tas
       .dashboard-container {
         padding: 15px;
       }
-      
+
       .chart-row {
         grid-template-columns: 1fr;
       }
-      
+
       .task-table {
         font-size: 0.7rem;
       }
-      
+
       .task-table th,
       .task-table td {
         padding: 8px 4px;
+      }
+
+      .filter-controls {
+        grid-template-columns: 1fr;
       }
     }
   `]
 })
 export class DashboardComponent implements OnInit {
-    protected dashboardService = inject(DashboardService);
+  protected dashboardService = inject(DashboardService);
 
-    // Signals for component state
-    public dashboardData = this.dashboardService.dashboardData;
+  // Signals for component state
+  public dashboardData = this.dashboardService.dashboardData;
 
-    // Effect to handle data changes
-    private dataEffect = effect(() => {
-        const data = this.dashboardData();
-        if (data) {
-            console.log('Dashboard data updated:', data);
-        }
+  // Date filter properties
+  dateFilterType = 'all';
+  singleDate = '';
+  fromDate = '';
+  toDate = '';
+
+  // Computed properties for filtered data
+  filteredTasks = computed(() => {
+    const tasks = this.dashboardData()?.tasks || [];
+    return this.filterTasksByDate(tasks);
+  });
+
+  filteredTaskGroups = computed(() => {
+    const filteredTasks = this.filteredTasks();
+    if (!filteredTasks.length) return [];
+
+    const groups = filteredTasks.reduce((acc: Record<string, TaskItem[]>, task) => {
+      if (!acc[task.groupTask]) {
+        acc[task.groupTask] = [];
+      }
+      acc[task.groupTask].push(task);
+      return acc;
+    }, {});
+
+    return Object.entries(groups).map(([name, tasks]) => ({ name, tasks }));
+  });
+
+  filteredTasksCount = computed(() => this.filteredTasks().length);
+  totalTasksCount = computed(() => this.dashboardData()?.tasks?.length || 0);
+
+  // Effect to handle data changes
+  private dataEffect = effect(() => {
+    const data = this.dashboardData();
+    if (data) {
+      console.log('Dashboard data updated:', data);
+    }
+  });
+
+  ngOnInit(): void {
+    this.loadDashboardData();
+  }
+
+  loadDashboardData(): void {
+    this.dashboardService.getDashboardData().subscribe({
+      error: (error) => {
+        console.error('Error loading dashboard data:', error);
+      }
     });
+  }
 
-    ngOnInit(): void {
-        this.loadDashboardData();
+  retryLoad(): void {
+    this.loadDashboardData();
+  }
+
+  applyDateFilters(): void {
+    // Filters are applied automatically through computed signal
+    console.log('Date filters applied:', {
+      type: this.dateFilterType,
+      single: this.singleDate,
+      from: this.fromDate,
+      to: this.toDate
+    });
+  }
+
+  private filterTasksByDate(tasks: TaskItem[]): TaskItem[] {
+    if (this.dateFilterType === 'all') {
+      return tasks;
     }
 
-    loadDashboardData(): void {
-        this.dashboardService.getDashboardData().subscribe({
-            error: (error) => {
-                console.error('Error loading dashboard data:', error);
-            }
-        });
+    if (this.dateFilterType === 'pending') {
+      return tasks.filter(task =>
+        task.status === TaskStatus.NotStarted ||
+        task.status === TaskStatus.InProgress ||
+        task.status === TaskStatus.Late
+      );
     }
 
-    retryLoad(): void {
-        this.loadDashboardData();
+    if (this.dateFilterType === 'single' && this.singleDate) {
+      const selectedDate = new Date(this.singleDate);
+      return tasks.filter(task => {
+        const taskDate = new Date(task.deadline);
+        return taskDate.toDateString() === selectedDate.toDateString();
+      });
     }
 
-    getCurrentDate(): string {
-        const options: Intl.DateTimeFormatOptions = {
-            weekday: 'short',
-            day: '2-digit',
-            month: 'short'
-        };
-        return new Date().toLocaleDateString('en-US', options);
+    if (this.dateFilterType === 'range' && this.fromDate && this.toDate) {
+      const from = new Date(this.fromDate);
+      const to = new Date(this.toDate);
+      return tasks.filter(task => {
+        const taskDate = new Date(task.deadline);
+        return taskDate >= from && taskDate <= to;
+      });
     }
 
-    formatDate(date: Date | string): string {
-        const d = new Date(date);
-        const options: Intl.DateTimeFormatOptions = {
-            weekday: 'short',
-            day: '2-digit',
-            month: 'short'
-        };
-        return d.toLocaleDateString('en-US', options);
+    return tasks;
+  }
+
+  getCurrentDate(): string {
+    const options: Intl.DateTimeFormatOptions = {
+      weekday: 'short',
+      day: '2-digit',
+      month: 'short'
+    };
+    return new Date().toLocaleDateString('en-US', options);
+  }
+
+  formatDate(date: Date | string): string {
+    const d = new Date(date);
+    const options: Intl.DateTimeFormatOptions = {
+      weekday: 'short',
+      day: '2-digit',
+      month: 'short'
+    };
+    return d.toLocaleDateString('en-US', options);
+  }
+
+  getTaskRowClass(task: TaskItem): string {
+    switch (task.status) {
+      case TaskStatus.Late:
+        return 'late';
+      case TaskStatus.Completed:
+        return 'completed';
+      default:
+        return '';
+    }
+  }
+
+  getStatusClass(status: TaskStatus): string {
+    switch (status) {
+      case TaskStatus.NotStarted:
+        return 'not-started';
+      case TaskStatus.InProgress:
+        return 'in-progress';
+      case TaskStatus.Late:
+        return 'late';
+      case TaskStatus.Completed:
+        return 'completed';
+      default:
+        return 'not-started';
+    }
+  }
+
+  getStatusText(status: TaskStatus): string {
+    switch (status) {
+      case TaskStatus.NotStarted:
+        return 'Not Started';
+      case TaskStatus.InProgress:
+        return 'In Progress';
+      case TaskStatus.Late:
+        return 'Late';
+      case TaskStatus.Completed:
+        return 'Completed';
+      default:
+        return 'Unknown';
+    }
+  }
+
+  getSportIcon(sport: string): string {
+    const sportIcons: Record<string, string> = {
+      'Football': 'fas fa-football-ball',
+      'Basketball': 'fas fa-basketball-ball',
+      'Tennis': 'fas fa-table-tennis',
+      'Swimming': 'fas fa-swimmer',
+      'Cricket': 'fas fa-baseball-ball',
+      'Running': 'fas fa-running',
+      'Golf': 'fas fa-golf-ball',
+      'Boxing': 'fas fa-fist-raised',
+      'Volleyball': 'fas fa-volleyball-ball',
+      'Cycling': 'fas fa-biking',
+      'Baseball': 'fas fa-baseball-ball',
+      'Soccer': 'fas fa-futbol',
+      'Hockey': 'fas fa-hockey-puck',
+      'Track & Field': 'fas fa-running',
+      'Wrestling': 'fas fa-fist-raised',
+      'Gymnastics': 'fas fa-child'
+    };
+    return sportIcons[sport] || 'fas fa-trophy';
+  }
+
+  getResourceWorkloadPercentage(type: 'done' | 'todo'): number {
+    const data = this.dashboardData();
+    if (!data?.resourceWorkload) return 0;
+
+    const total = data.resourceWorkload.done + data.resourceWorkload.leftToDo;
+    if (total === 0) return 0;
+
+    if (type === 'done') {
+      return (data.resourceWorkload.done / total) * 100;
+    } else {
+      return (data.resourceWorkload.leftToDo / total) * 100;
+    }
+  }
+
+  getTaskCompletionDashArray(type: 'onTrack' | 'late'): string {
+    const data = this.dashboardData();
+    if (!data?.taskCompletion) return '0 100';
+
+    const total = this.dashboardService.totalTasks();
+    if (total === 0) return '0 100';
+
+    if (type === 'onTrack') {
+      const percentage = (data.taskCompletion.onTrack / total) * 100;
+      return `${percentage} ${100 - percentage}`;
+    } else {
+      const percentage = (data.taskCompletion.late / total) * 100;
+      return `${percentage} ${100 - percentage}`;
+    }
+  }
+
+  getActiveTasksDashArray(type: 'completed' | 'inProgress' | 'notStarted'): string {
+    const data = this.dashboardData();
+    if (!data?.activeTasks) return '0 100';
+
+    const total = data.activeTasks.completed +
+      data.activeTasks.inProgress +
+      data.activeTasks.notStarted;
+
+    if (total === 0) return '0 100';
+
+    let value = 0;
+    switch (type) {
+      case 'completed':
+        value = data.activeTasks.completed;
+        break;
+      case 'inProgress':
+        value = data.activeTasks.inProgress;
+        break;
+      case 'notStarted':
+        value = data.activeTasks.notStarted;
+        break;
     }
 
-    getTaskRowClass(task: TaskItem): string {
-        switch (task.status) {
-            case TaskStatus.Late:
-                return 'late';
-            case TaskStatus.Completed:
-                return 'completed';
-            default:
-                return '';
-        }
-    }
-
-    getStatusClass(status: TaskStatus): string {
-        switch (status) {
-            case TaskStatus.NotStarted:
-                return 'not-started';
-            case TaskStatus.InProgress:
-                return 'in-progress';
-            case TaskStatus.Late:
-                return 'late';
-            case TaskStatus.Completed:
-                return 'completed';
-            default:
-                return 'not-started';
-        }
-    }
-
-    getStatusText(status: TaskStatus): string {
-        switch (status) {
-            case TaskStatus.NotStarted:
-                return 'Not Started';
-            case TaskStatus.InProgress:
-                return 'In Progress';
-            case TaskStatus.Late:
-                return 'Late';
-            case TaskStatus.Completed:
-                return 'Completed';
-            default:
-                return 'Unknown';
-        }
-    }
-
-    getResourceWorkloadPercentage(type: 'done' | 'todo'): number {
-        const data = this.dashboardData();
-        if (!data?.resourceWorkload) return 0;
-
-        const total = data.resourceWorkload.done + data.resourceWorkload.leftToDo;
-        if (total === 0) return 0;
-
-        if (type === 'done') {
-            return (data.resourceWorkload.done / total) * 100;
-        } else {
-            return (data.resourceWorkload.leftToDo / total) * 100;
-        }
-    }
-
-    getTaskCompletionDashArray(type: 'onTrack' | 'late'): string {
-        const data = this.dashboardData();
-        if (!data?.taskCompletion) return '0 100';
-
-        const total = this.dashboardService.totalTasks();
-        if (total === 0) return '0 100';
-
-        if (type === 'onTrack') {
-            const percentage = (data.taskCompletion.onTrack / total) * 100;
-            return `${percentage} ${100 - percentage}`;
-        } else {
-            const percentage = (data.taskCompletion.late / total) * 100;
-            return `${percentage} ${100 - percentage}`;
-        }
-    }
-
-    getActiveTasksDashArray(type: 'completed' | 'inProgress' | 'notStarted'): string {
-        const data = this.dashboardData();
-        if (!data?.activeTasks) return '0 100';
-
-        const total = data.activeTasks.completed +
-            data.activeTasks.inProgress +
-            data.activeTasks.notStarted;
-
-        if (total === 0) return '0 100';
-
-        let value = 0;
-        switch (type) {
-            case 'completed':
-                value = data.activeTasks.completed;
-                break;
-            case 'inProgress':
-                value = data.activeTasks.inProgress;
-                break;
-            case 'notStarted':
-                value = data.activeTasks.notStarted;
-                break;
-        }
-
-        const percentage = (value / total) * 100;
-        return `${percentage} ${100 - percentage}`;
-    }
+    const percentage = (value / total) * 100;
+    return `${percentage} ${100 - percentage}`;
+  }
 }

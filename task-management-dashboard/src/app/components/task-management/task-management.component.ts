@@ -1,4 +1,4 @@
-// src/app/components/task-management/task-management.component.ts - Fixed version
+// src/app/components/task-management/task-management.component.ts - Complete version
 import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -6,10 +6,10 @@ import { DashboardService } from '../../services/dashboard.service';
 import { TaskItem, TaskStatus, CreateTaskRequest, SPORTS_OPTIONS } from '../../models/task.model';
 
 @Component({
-    selector: 'app-task-management',
-    standalone: true,
-    imports: [CommonModule, FormsModule],
-    template: `
+  selector: 'app-task-management',
+  standalone: true,
+  imports: [CommonModule, FormsModule],
+  template: `
     <div class="task-management-container">
       <div class="header-section">
         <h2>Task Management</h2>
@@ -29,7 +29,7 @@ import { TaskItem, TaskStatus, CreateTaskRequest, SPORTS_OPTIONS } from '../../m
             }
           </select>
         </div>
-        
+
         <div class="filter-group">
           <label>Filter by Sport:</label>
           <select [(ngModel)]="sportFilter" (change)="applyFilters()">
@@ -39,10 +39,10 @@ import { TaskItem, TaskStatus, CreateTaskRequest, SPORTS_OPTIONS } from '../../m
             }
           </select>
         </div>
-        
+
         <div class="filter-group">
           <label>Search:</label>
-          <input type="text" [(ngModel)]="searchTerm" (input)="applyFilters()" 
+          <input type="text" [(ngModel)]="searchTerm" (input)="applyFilters()"
                  placeholder="Search by customer, assignee, or task name...">
         </div>
       </div>
@@ -88,7 +88,10 @@ import { TaskItem, TaskStatus, CreateTaskRequest, SPORTS_OPTIONS } from '../../m
                     <a [href]="'tel:' + task.phoneNo">{{ task.phoneNo }}</a>
                   </td>
                   <td>
-                    <span class="sport-badge">{{ task.sportPlayed }}</span>
+                    <span class="sport-badge">
+                      <i [class]="getSportIcon(task.sportPlayed)"></i>
+                      {{ task.sportPlayed }}
+                    </span>
                   </td>
                   <td>{{ task.assignedTo }}</td>
                   <td>
@@ -137,24 +140,24 @@ import { TaskItem, TaskStatus, CreateTaskRequest, SPORTS_OPTIONS } from '../../m
               <h3>{{ editingTask() ? 'Edit Task' : 'Create New Task' }}</h3>
               <button class="close-btn" (click)="closeModal()">×</button>
             </div>
-            
+
             <form class="modal-body" (ngSubmit)="saveTask()" #formRef="ngForm">
               <div class="form-grid">
                 <div class="form-group">
                   <label for="taskName">Task Name *</label>
                   <input type="text" id="taskName" [(ngModel)]="formData.name" name="taskName" required>
                 </div>
-                
+
                 <div class="form-group">
                   <label for="customerName">Customer *</label>
                   <input type="text" id="customerName" [(ngModel)]="formData.customer" name="customerName" required>
                 </div>
-                
+
                 <div class="form-group">
                   <label for="phoneNumber">Phone Number</label>
                   <input type="tel" id="phoneNumber" [(ngModel)]="formData.phoneNo" name="phoneNumber">
                 </div>
-                
+
                 <div class="form-group">
                   <label for="sport">Sport *</label>
                   <select id="sport" [(ngModel)]="formData.sportPlayed" name="sport" required>
@@ -164,22 +167,22 @@ import { TaskItem, TaskStatus, CreateTaskRequest, SPORTS_OPTIONS } from '../../m
                     }
                   </select>
                 </div>
-                
+
                 <div class="form-group">
                   <label for="assignee">Assigned To *</label>
                   <input type="text" id="assignee" [(ngModel)]="formData.assignedTo" name="assignee" required>
                 </div>
-                
+
                 <div class="form-group">
                   <label for="group">Group/Category</label>
                   <input type="text" id="group" [(ngModel)]="formData.groupTask" name="group">
                 </div>
-                
+
                 <div class="form-group">
                   <label for="dueDate">Deadline *</label>
                   <input type="date" id="dueDate" [(ngModel)]="formData.deadline" name="dueDate" required>
                 </div>
-                
+
                 <div class="form-group">
                   <label for="taskStatus">Status</label>
                   <select id="taskStatus" [(ngModel)]="formData.status" name="taskStatus">
@@ -188,25 +191,25 @@ import { TaskItem, TaskStatus, CreateTaskRequest, SPORTS_OPTIONS } from '../../m
                     }
                   </select>
                 </div>
-                
+
                 <div class="form-group">
                   <label for="hoursRequired">Work Required (hours)</label>
                   <input type="number" id="hoursRequired" [(ngModel)]="formData.workRequired" name="hoursRequired" min="1">
                 </div>
-                
+
                 <div class="form-group">
                   <label for="completionPercent">Progress (%)</label>
-                  <input type="number" id="completionPercent" [(ngModel)]="formData.percentCompleted" 
+                  <input type="number" id="completionPercent" [(ngModel)]="formData.percentCompleted"
                          name="completionPercent" min="0" max="100">
                 </div>
               </div>
-              
+
               <div class="form-group full-width">
                 <label for="taskUpdates">Updates/Notes</label>
-                <textarea id="taskUpdates" [(ngModel)]="formData.updates" name="taskUpdates" 
-                         rows="3" placeholder="Add any updates or notes about this task..."></textarea>
+                <textarea id="taskUpdates" [(ngModel)]="formData.updates" name="taskUpdates"
+                          rows="3" placeholder="Add any updates or notes about this task..."></textarea>
               </div>
-              
+
               <div class="modal-actions">
                 <button type="button" class="btn btn-secondary" (click)="closeModal()">Cancel</button>
                 <button type="submit" class="btn btn-primary" [disabled]="!formRef.valid">
@@ -219,7 +222,7 @@ import { TaskItem, TaskStatus, CreateTaskRequest, SPORTS_OPTIONS } from '../../m
       }
     </div>
   `,
-    styles: [`
+  styles: [`
     .task-management-container {
       max-width: 1600px;
       margin: 0 auto;
@@ -320,12 +323,22 @@ import { TaskItem, TaskStatus, CreateTaskRequest, SPORTS_OPTIONS } from '../../m
     }
 
     .sport-badge {
-      background: #3498db;
-      color: white;
+      display: flex;
+      align-items: center;
+      gap: 6px;
       padding: 4px 8px;
+      background: #f8f9fa;
       border-radius: 12px;
       font-size: 0.75rem;
-      font-weight: 600;
+      font-weight: 500;
+      color: #2c3e50;
+      border: 1px solid #e9ecef;
+      max-width: fit-content;
+    }
+
+    .sport-badge i {
+      font-size: 0.8rem;
+      color: #3498db;
     }
 
     .status-badge {
@@ -600,240 +613,314 @@ import { TaskItem, TaskStatus, CreateTaskRequest, SPORTS_OPTIONS } from '../../m
   `]
 })
 export class TaskManagementComponent implements OnInit {
-    protected dashboardService = inject(DashboardService);
+  protected dashboardService = inject(DashboardService);
 
-    // Signals for component state
-    showModal = signal(false);
-    editingTask = signal<TaskItem | null>(null);
-    statusFilter = '';
-    sportFilter = '';
-    searchTerm = '';
+  // Signals for component state
+  showModal = signal(false);
+  editingTask = signal<TaskItem | null>(null);
+  statusFilter = '';
+  sportFilter = '';
+  searchTerm = '';
 
-    // Form data - renamed to avoid conflicts
-    formData: any = this.getEmptyFormData();
+  // Form data
+  formData: any = this.getEmptyFormData();
 
-    // Options
-    statusOptions = [
-        { value: TaskStatus.NotStarted, label: 'Not Started' },
-        { value: TaskStatus.InProgress, label: 'In Progress' },
-        { value: TaskStatus.Late, label: 'Late' },
-        { value: TaskStatus.Completed, label: 'Completed' },
-        { value: TaskStatus.OnHold, label: 'On Hold' },
-        { value: TaskStatus.Cancelled, label: 'Cancelled' }
-    ];
+  // Options
+  statusOptions = [
+    { value: TaskStatus.NotStarted, label: 'Not Started' },
+    { value: TaskStatus.InProgress, label: 'In Progress' },
+    { value: TaskStatus.Late, label: 'Late' },
+    { value: TaskStatus.Completed, label: 'Completed' },
+    { value: TaskStatus.OnHold, label: 'On Hold' },
+    { value: TaskStatus.Cancelled, label: 'Cancelled' }
+  ];
 
-    sportsOptions = SPORTS_OPTIONS;
+  sportsOptions = SPORTS_OPTIONS;
 
-    // Computed properties
-    filteredTasks = computed(() => {
-        const tasks = this.dashboardService.dashboardData()?.tasks || [];
+  // Computed properties
+  filteredTasks = computed(() => {
+    const tasks = this.dashboardService.dashboardData()?.tasks || [];
 
-        return tasks.filter(task => {
-            const matchesStatus = !this.statusFilter || task.status === this.statusFilter;
-            const matchesSport = !this.sportFilter || task.sportPlayed === this.sportFilter;
-            const matchesSearch = !this.searchTerm ||
-                task.name.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
-                task.customer.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
-                task.assignedTo.toLowerCase().includes(this.searchTerm.toLowerCase());
+    return tasks.filter(task => {
+      const matchesStatus = !this.statusFilter || task.status === this.statusFilter;
+      const matchesSport = !this.sportFilter || task.sportPlayed === this.sportFilter;
+      const matchesSearch = !this.searchTerm ||
+        task.name.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+        task.customer.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+        task.assignedTo.toLowerCase().includes(this.searchTerm.toLowerCase());
 
-            return matchesStatus && matchesSport && matchesSearch;
-        });
+      return matchesStatus && matchesSport && matchesSearch;
     });
+  });
 
-    ngOnInit(): void {
-        this.loadTasks();
+  ngOnInit(): void {
+    this.loadTasks();
+  }
+
+  loadTasks(): void {
+    this.dashboardService.getDashboardData().subscribe({
+      error: (error) => {
+        console.error('Error loading tasks:', error);
+      }
+    });
+  }
+
+  applyFilters(): void {
+    // Filters are applied automatically through computed signal
+  }
+
+  openCreateModal(): void {
+    this.editingTask.set(null);
+    this.formData = this.getEmptyFormData();
+    this.showModal.set(true);
+  }
+
+  editTask(task: TaskItem): void {
+    this.editingTask.set(task);
+    this.formData = {
+      name: task.name,
+      customer: task.customer,
+      phoneNo: task.phoneNo,
+      sportPlayed: task.sportPlayed,
+      assignedTo: task.assignedTo,
+      groupTask: task.groupTask,
+      deadline: this.formatDateForInput(task.deadline),
+      status: task.status,
+      workRequired: task.workRequired,
+      percentCompleted: task.percentCompleted,
+      updates: task.updates
+    };
+    this.showModal.set(true);
+  }
+
+  closeModal(): void {
+    this.showModal.set(false);
+    this.editingTask.set(null);
+    this.formData = this.getEmptyFormData();
+  }
+
+  // Replace your saveTask() method in task-management.component.ts with this fixed version:
+
+  saveTask(): void {
+    console.log('Raw form data:', this.formData);
+
+    // Convert date to ISO string format for API
+    const deadlineDate = new Date(this.formData.deadline);
+    if (isNaN(deadlineDate.getTime())) {
+      alert('Please enter a valid deadline date');
+      return;
     }
 
-    loadTasks(): void {
-        this.dashboardService.getDashboardData().subscribe({
-            error: (error) => {
-                console.error('Error loading tasks:', error);
+    const taskData = {
+      name: this.formData.name?.trim(),
+      customer: this.formData.customer?.trim(),
+      phoneNo: this.formData.phoneNo?.trim() || '',
+      sportPlayed: this.formData.sportPlayed?.trim(),
+      assignedTo: this.formData.assignedTo?.trim(),
+      groupTask: this.formData.groupTask?.trim() || 'General',
+      deadline: deadlineDate.toISOString(), // Convert to ISO string
+      status: this.formData.status || TaskStatus.NotStarted,
+      workRequired: Number(this.formData.workRequired) || 1,
+      percentCompleted: Number(this.formData.percentCompleted) || 0,
+      updates: this.formData.updates?.trim() || ''
+    };
+
+    console.log('Processed task data:', taskData);
+    console.log('Deadline as ISO string:', taskData.deadline);
+
+    // Validation check
+    const errors = [];
+    if (!taskData.name) errors.push('Name is required');
+    if (!taskData.customer) errors.push('Customer is required');
+    if (!taskData.sportPlayed) errors.push('Sport is required');
+    if (!taskData.assignedTo) errors.push('Assigned to is required');
+    if (!taskData.deadline) errors.push('Valid deadline is required');
+
+    if (errors.length > 0) {
+      console.error('Validation errors:', errors);
+      alert('Please fix these errors:\n' + errors.join('\n'));
+      return;
+    }
+
+    if (this.editingTask()) {
+      // Update existing task
+      console.log('Updating task ID:', this.editingTask()!.id);
+      this.dashboardService.updateTask(this.editingTask()!.id, taskData as any).subscribe({
+        next: (response) => {
+          console.log('Task updated successfully:', response);
+          this.closeModal();
+          this.loadTasks();
+        },
+        error: (error) => {
+          console.error('Error updating task:', error);
+          console.error('Error details:', error.error);
+          alert('Error updating task: ' + (error.error?.message || error.message));
+        }
+      });
+    } else {
+      // Create new task
+      console.log('Creating new task with data:', taskData);
+      this.dashboardService.createTask(taskData as any).subscribe({
+        next: (response) => {
+          console.log('Task created successfully:', response);
+          this.closeModal();
+          this.loadTasks();
+        },
+        error: (error) => {
+          console.error('Error creating task:', error);
+          console.error('Full error object:', error);
+
+          let errorMessage = 'Error creating task: ';
+          if (error.error?.message) {
+            errorMessage += error.error.message;
+          } else if (error.error?.errors) {
+            if (Array.isArray(error.error.errors)) {
+              errorMessage += error.error.errors.join(', ');
+            } else {
+              errorMessage += JSON.stringify(error.error.errors);
             }
-        });
-    }
-
-    applyFilters(): void {
-        // Filters are applied automatically through computed signal
-    }
-
-    openCreateModal(): void {
-        this.editingTask.set(null);
-        this.formData = this.getEmptyFormData();
-        this.showModal.set(true);
-    }
-
-    editTask(task: TaskItem): void {
-        this.editingTask.set(task);
-        this.formData = {
-            name: task.name,
-            customer: task.customer,
-            phoneNo: task.phoneNo,
-            sportPlayed: task.sportPlayed,
-            assignedTo: task.assignedTo,
-            groupTask: task.groupTask,
-            deadline: this.formatDateForInput(task.deadline),
-            status: task.status,
-            workRequired: task.workRequired,
-            percentCompleted: task.percentCompleted,
-            updates: task.updates
-        };
-        this.showModal.set(true);
-    }
-
-    closeModal(): void {
-        this.showModal.set(false);
-        this.editingTask.set(null);
-        this.formData = this.getEmptyFormData();
-    }
-
-    saveTask(): void {
-        const taskData: CreateTaskRequest = {
-            name: this.formData.name,
-            customer: this.formData.customer,
-            phoneNo: this.formData.phoneNo,
-            sportPlayed: this.formData.sportPlayed,
-            assignedTo: this.formData.assignedTo,
-            groupTask: this.formData.groupTask || 'General',
-            deadline: new Date(this.formData.deadline),
-            status: this.formData.status,
-            workRequired: this.formData.workRequired || 1,
-            percentCompleted: this.formData.percentCompleted || 0,
-            updates: this.formData.updates || ''
-        };
-
-        if (this.editingTask()) {
-            // Update existing task
-            this.dashboardService.updateTask(this.editingTask()!.id, taskData as any).subscribe({
-                next: () => {
-                    this.closeModal();
-                    this.loadTasks();
-                },
-                error: (error) => {
-                    console.error('Error updating task:', error);
-                }
-            });
-        } else {
-            // Create new task
-            this.dashboardService.createTask(taskData as any).subscribe({
-                next: () => {
-                    this.closeModal();
-                    this.loadTasks();
-                },
-                error: (error) => {
-                    console.error('Error creating task:', error);
-                }
-            });
+          } else if (error.message) {
+            errorMessage += error.message;
+          } else {
+            errorMessage += 'Unknown error occurred';
+          }
+          alert(errorMessage);
         }
+      });
     }
-
-    deleteTask(id: number): void {
-        if (confirm('Are you sure you want to delete this task?')) {
-            this.dashboardService.deleteTask(id).subscribe({
-                next: () => {
-                    this.loadTasks();
-                },
-                error: (error) => {
-                    console.error('Error deleting task:', error);
-                }
-            });
+  }
+  deleteTask(id: number): void {
+    if (confirm('Are you sure you want to delete this task?')) {
+      this.dashboardService.deleteTask(id).subscribe({
+        next: () => {
+          console.log('Task deleted successfully');
+          this.loadTasks();
+        },
+        error: (error) => {
+          console.error('Error deleting task:', error);
+          alert('Error deleting task. Please try again.');
         }
+      });
     }
+  }
 
-    getEmptyFormData() {
-        return {
-            name: '',
-            customer: '',
-            phoneNo: '',
-            sportPlayed: '',
-            assignedTo: '',
-            groupTask: '',
-            deadline: '',
-            status: TaskStatus.NotStarted,
-            workRequired: 1,
-            percentCompleted: 0,
-            updates: ''
-        };
+  getEmptyFormData() {
+    return {
+      name: '',
+      customer: '',
+      phoneNo: '',
+      sportPlayed: '',
+      assignedTo: '',
+      groupTask: '',
+      deadline: '',
+      status: TaskStatus.NotStarted,
+      workRequired: 1,
+      percentCompleted: 0,
+      updates: ''
+    };
+  }
+
+  formatDate(date: Date | string): string {
+    const d = new Date(date);
+    const options: Intl.DateTimeFormatOptions = {
+      weekday: 'short',
+      month: 'short',
+      day: '2-digit'
+    };
+    return d.toLocaleDateString('en-US', options);
+  }
+
+  formatDateForInput(date: Date | string): string {
+    const d = new Date(date);
+    return d.toISOString().split('T')[0];
+  }
+
+  getTaskRowClass(task: TaskItem): string {
+    switch (task.status) {
+      case TaskStatus.Late:
+        return 'late';
+      case TaskStatus.Completed:
+        return 'completed';
+      default:
+        return '';
     }
+  }
 
-    formatDate(date: Date | string): string {
-        const d = new Date(date);
-        const options: Intl.DateTimeFormatOptions = {
-            weekday: 'short',
-            month: 'short',
-            day: '2-digit'
-        };
-        return d.toLocaleDateString('en-US', options);
+  getStatusClass(status: TaskStatus): string {
+    switch (status) {
+      case TaskStatus.NotStarted:
+        return 'not-started';
+      case TaskStatus.InProgress:
+        return 'in-progress';
+      case TaskStatus.Late:
+        return 'late';
+      case TaskStatus.Completed:
+        return 'completed';
+      case TaskStatus.OnHold:
+        return 'on-hold';
+      case TaskStatus.Cancelled:
+        return 'cancelled';
+      default:
+        return 'not-started';
     }
+  }
 
-    formatDateForInput(date: Date | string): string {
-        const d = new Date(date);
-        return d.toISOString().split('T')[0];
+  getStatusText(status: TaskStatus): string {
+    switch (status) {
+      case TaskStatus.NotStarted:
+        return 'Not Started';
+      case TaskStatus.InProgress:
+        return 'In Progress';
+      case TaskStatus.Late:
+        return 'Late';
+      case TaskStatus.Completed:
+        return 'Completed';
+      case TaskStatus.OnHold:
+        return 'On Hold';
+      case TaskStatus.Cancelled:
+        return 'Cancelled';
+      default:
+        return 'Unknown';
     }
+  }
 
-    getTaskRowClass(task: TaskItem): string {
-        switch (task.status) {
-            case TaskStatus.Late:
-                return 'late';
-            case TaskStatus.Completed:
-                return 'completed';
-            default:
-                return '';
-        }
+  getSportIcon(sport: string): string {
+    const sportIcons: Record<string, string> = {
+      'Football': 'fas fa-football-ball',
+      'Basketball': 'fas fa-basketball-ball',
+      'Tennis': 'fas fa-table-tennis',
+      'Swimming': 'fas fa-swimmer',
+      'Cricket': 'fas fa-baseball-ball',
+      'Running': 'fas fa-running',
+      'Golf': 'fas fa-golf-ball',
+      'Boxing': 'fas fa-fist-raised',
+      'Volleyball': 'fas fa-volleyball-ball',
+      'Cycling': 'fas fa-biking',
+      'Baseball': 'fas fa-baseball-ball',
+      'Soccer': 'fas fa-futbol',
+      'Hockey': 'fas fa-hockey-puck',
+      'Track & Field': 'fas fa-running',
+      'Wrestling': 'fas fa-fist-raised',
+      'Gymnastics': 'fas fa-child'
+    };
+    return sportIcons[sport] || 'fas fa-trophy';
+  }
+
+  getDeadlineClass(deadline: Date | string): string {
+    const now = new Date();
+    const deadlineDate = new Date(deadline);
+    const diffDays = Math.ceil((deadlineDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+
+    if (diffDays < 0) {
+      return 'deadline-overdue';
+    } else if (diffDays <= 3) {
+      return 'deadline-upcoming';
     }
+    return 'deadline-normal';
+  }
 
-    getStatusClass(status: TaskStatus): string {
-        switch (status) {
-            case TaskStatus.NotStarted:
-                return 'not-started';
-            case TaskStatus.InProgress:
-                return 'in-progress';
-            case TaskStatus.Late:
-                return 'late';
-            case TaskStatus.Completed:
-                return 'completed';
-            case TaskStatus.OnHold:
-                return 'on-hold';
-            case TaskStatus.Cancelled:
-                return 'cancelled';
-            default:
-                return 'not-started';
-        }
-    }
-
-    getStatusText(status: TaskStatus): string {
-        switch (status) {
-            case TaskStatus.NotStarted:
-                return 'Not Started';
-            case TaskStatus.InProgress:
-                return 'In Progress';
-            case TaskStatus.Late:
-                return 'Late';
-            case TaskStatus.Completed:
-                return 'Completed';
-            case TaskStatus.OnHold:
-                return 'On Hold';
-            case TaskStatus.Cancelled:
-                return 'Cancelled';
-            default:
-                return 'Unknown';
-        }
-    }
-
-    getDeadlineClass(deadline: Date | string): string {
-        const now = new Date();
-        const deadlineDate = new Date(deadline);
-        const diffDays = Math.ceil((deadlineDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-
-        if (diffDays < 0) {
-            return 'deadline-overdue';
-        } else if (diffDays <= 3) {
-            return 'deadline-upcoming';
-        }
-        return 'deadline-normal';
-    }
-
-    getUpdatesPreview(updates: string): string {
-        if (!updates) return 'No updates';
-        return updates.length > 50 ? updates.substring(0, 50) + '...' : updates;
-    }
+  getUpdatesPreview(updates: string): string {
+    if (!updates) return 'No updates';
+    return updates.length > 50 ? updates.substring(0, 50) + '...' : updates;
+  }
 }
