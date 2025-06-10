@@ -1,4 +1,4 @@
-/* Beautiful Modern CSS for fixtures component */
+/* Complete fixtures.component.css - Fixed popup positioning, sizing, and responsive design */
 
 .fixtures-container {
     max-width: 100%;
@@ -8,8 +8,8 @@
     border-radius: 20px;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
     position: relative;
-    overflow: hidden;
-    /* IMPORTANT: Prevent the container from expanding */
+    overflow: visible;
+    /* CRITICAL: Allow popups to extend beyond container */
     width: 100%;
     box-sizing: border-box;
 }
@@ -157,13 +157,40 @@
     gap: 10px;
 }
 
-/* Schedule Grid Container - FIXED TO PREVENT PAGE SCROLLING */
+/* Customer Filter Display */
+.active-customer-filter {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(102, 126, 234, 0.1);
+    padding: 12px 16px;
+    border-radius: 8px;
+    color: #667eea;
+    font-weight: 600;
+}
+
+.btn-clear-customer {
+    background: none;
+    border: none;
+    color: #667eea;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.btn-clear-customer:hover {
+    background: rgba(102, 126, 234, 0.1);
+    color: #5b21b6;
+}
+
+/* Schedule Grid Container - FIXED TO PREVENT CLIPPING */
 .schedule-wrapper {
     width: 100%;
     overflow-x: auto;
     overflow-y: visible;
+    /* CRITICAL: Allow vertical overflow for popups */
     padding: 20px 0;
-    /* Prevent the container from pushing the page */
     position: relative;
     scroll-behavior: smooth;
     -webkit-overflow-scrolling: touch;
@@ -188,16 +215,17 @@
     background: linear-gradient(135deg, #5b21b6, #7c3aed);
 }
 
-/* Schedule Grid - FIXED WIDTH GRID */
+/* Schedule Grid - FIXED WIDTH GRID WITH OVERFLOW HANDLING */
 .schedule-grid {
     display: flex;
     gap: 24px;
     min-height: 600px;
     position: relative;
     z-index: 1;
-    /* Fixed total width to prevent page expansion */
     width: calc(280px * 7 + 24px * 6);
     padding: 0 20px;
+    overflow: visible;
+    /* CRITICAL: Allow popups to extend beyond grid */
 }
 
 .day-column {
@@ -206,19 +234,17 @@
     backdrop-filter: blur(20px);
     border-radius: 16px;
     overflow: visible;
+    /* CRITICAL: Allow popups to extend beyond column */
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
     border: 1px solid rgba(255, 255, 255, 0.2);
     position: relative;
     z-index: 2;
     height: 600px;
-    /* Fixed height instead of min-height */
     width: 280px;
-    /* Fixed width */
     display: flex;
     flex-direction: column;
     transition: all 0.3s ease;
     flex-shrink: 0;
-    /* Prevent shrinking */
 }
 
 .day-column:hover {
@@ -272,10 +298,10 @@
     flex: 1;
     overflow-y: auto;
     overflow-x: visible;
+    /* CRITICAL: Allow horizontal overflow for popups */
     position: relative;
     z-index: 3;
     max-height: calc(600px - 120px);
-    /* Account for header height */
 }
 
 /* Beautiful Time Slot Cards */
@@ -485,6 +511,8 @@
     position: relative;
     z-index: 4;
     border: 1px solid rgba(102, 126, 234, 0.1);
+    overflow: visible;
+    /* CRITICAL: Allow popup overflow */
 }
 
 .attendee-item.present {
@@ -574,37 +602,47 @@
     transform: scale(1.1);
 }
 
-/* Beautiful Tooltip */
-/* FIXED TOOLTIP POSITIONING */
+/* FIXED POPUP POSITIONING - Matches day column width exactly */
 .tasks-hover-tooltip {
-    position: fixed !important;
-    left: 50% !important;
-    top: 50% !important;
-    transform: translate(-50%, -50%) !important;
+    position: absolute !important;
+    left: 0 !important;
+    /* Align with day column left edge */
+    top: 100% !important;
+    /* Position below the attendee item */
+    transform: none !important;
     z-index: 99999 !important;
     background: white;
     border: none;
     border-radius: 16px;
     box-shadow: 0 25px 80px rgba(0, 0, 0, 0.4);
-    width: 400px;
-    max-width: 90vw;
-    max-height: 80vh;
+    width: 280px !important;
+    /* Match day column width exactly */
+    max-height: 400px;
     overflow-y: auto;
     animation: tooltipFadeIn 0.3s ease-out;
     pointer-events: auto;
     -webkit-backdrop-filter: blur(20px);
     backdrop-filter: blur(20px);
+    margin-top: 8px;
+    /* Small gap below attendee item */
+}
+
+/* If popup would go off-screen to the right, position it to the left */
+.day-column:nth-last-child(-n+2) .tasks-hover-tooltip {
+    left: -280px !important;
+    /* Position to the left of day column */
+    margin-left: -8px;
 }
 
 @keyframes tooltipFadeIn {
     from {
         opacity: 0;
-        transform: translate(-50%, -50%) scale(0.9);
+        transform: translateY(-10px);
     }
 
     to {
         opacity: 1;
-        transform: translate(-50%, -50%) scale(1);
+        transform: translateY(0);
     }
 }
 
@@ -617,6 +655,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    border-radius: 16px 16px 0 0;
 }
 
 .tooltip-header small {
@@ -751,6 +790,7 @@
     border-top: 1px solid rgba(102, 126, 234, 0.1);
     padding: 16px 24px;
     text-align: center;
+    border-radius: 0 0 16px 16px;
 }
 
 .tooltip-footer small {
@@ -933,18 +973,18 @@
     color: #ef4444;
 }
 
-/* Beautiful Modal Styles */
+/* FIXED Modal Styles - Centered on screen */
 .modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
     background: rgba(0, 0, 0, 0.6);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    z-index: 10000 !important;
     -webkit-backdrop-filter: blur(8px);
     backdrop-filter: blur(8px);
     animation: modalOverlayFadeIn 0.3s ease-out;
@@ -969,6 +1009,9 @@
     overflow: hidden;
     box-shadow: 0 25px 80px rgba(0, 0, 0, 0.3);
     animation: modalContentSlideIn 0.4s ease-out;
+    position: relative;
+    z-index: 10001;
+    margin: auto;
 }
 
 @keyframes modalContentSlideIn {
@@ -1021,6 +1064,7 @@
 .modal-body {
     padding: 28px;
     overflow-y: auto;
+    max-height: calc(90vh - 160px);
 }
 
 .form-grid {
@@ -1033,6 +1077,8 @@
 .form-group {
     display: flex;
     flex-direction: column;
+    margin-bottom: 0;
+    box-sizing: border-box;
 }
 
 .form-group.full-width {
@@ -1056,6 +1102,8 @@
     transition: all 0.3s ease;
     background: white;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    box-sizing: border-box;
+    width: 100%;
 }
 
 .form-group input:focus,
@@ -1100,6 +1148,10 @@
         min-width: 980px;
         overflow-x: auto;
         padding-bottom: 16px;
+    }
+
+    .day-column {
+        width: 140px;
     }
 
     .day-header {
@@ -1153,9 +1205,40 @@
         padding: 14px 18px;
     }
 
+    /* Mobile popup positioning */
     .tasks-hover-tooltip {
+        position: fixed !important;
+        left: 50% !important;
+        top: 50% !important;
+        transform: translate(-50%, -50%) !important;
         width: 95vw !important;
         max-width: 380px !important;
+        z-index: 99999 !important;
+    }
+
+    /* Add backdrop overlay for mobile */
+    .tasks-hover-tooltip::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.3);
+        z-index: -1;
+    }
+
+    /* Mobile modal adjustments */
+    .modal-content {
+        width: 95%;
+        max-width: 95%;
+        margin: 20px auto;
+        max-height: calc(100vh - 40px);
+    }
+
+    .modal-body {
+        padding: 20px;
+        max-height: calc(100vh - 200px);
     }
 }
 
@@ -1163,6 +1246,10 @@
     .schedule-grid {
         grid-template-columns: repeat(7, minmax(120px, 1fr));
         min-width: 840px;
+    }
+
+    .day-column {
+        width: 120px;
     }
 
     .time-slot-header .sport-badge {
@@ -1185,7 +1272,7 @@
     }
 }
 
-/* Enhanced stacking context */
+/* Enhanced stacking context and overflow handling */
 .attendee-item {
     position: relative;
     z-index: 3;
@@ -1221,4 +1308,88 @@
 
 .time-slots::-webkit-scrollbar-thumb:hover {
     background: linear-gradient(135deg, #5b21b6, #7c3aed);
+}
+
+/* Enhanced z-index management for proper layering */
+.fixtures-container * {
+    position: relative;
+}
+
+.fixtures-container .tasks-hover-tooltip {
+    z-index: 99999 !important;
+    position: absolute !important;
+}
+
+/* Additional fallback positioning */
+.attendee-item.hovered {
+    z-index: 99998;
+}
+
+/* Ensure all interactive elements are properly positioned */
+.task-count-badge {
+    z-index: 999;
+}
+
+.attendance-toggle {
+    z-index: 10;
+}
+
+.btn-icon,
+.btn-icon-small {
+    z-index: 10;
+}
+
+/* Status and priority specific styles */
+.task-status.on-hold {
+    background: rgba(245, 158, 11, 0.1);
+    color: #f59e0b;
+}
+
+.task-status.cancelled {
+    background: rgba(107, 114, 126, 0.1);
+    color: #6b7280;
+}
+
+/* Enhanced hover effects */
+.time-slot-card:hover .sport-badge {
+    transform: scale(1.05);
+}
+
+.attendee-item:hover {
+    transform: translateX(2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+}
+
+/* Loading and error state improvements */
+.error-message h3 {
+    color: #ef4444;
+    margin-bottom: 16px;
+}
+
+.error-message p {
+    color: #64748b;
+    margin-bottom: 20px;
+}
+
+/* Final responsive adjustments */
+@media (min-width: 1200px) {
+    .fixtures-container {
+        max-width: 1400px;
+    }
+
+    .schedule-grid {
+        width: calc(300px * 7 + 24px * 6);
+    }
+
+    .day-column {
+        width: 300px;
+    }
+
+    .tasks-hover-tooltip {
+        width: 300px !important;
+    }
+
+    .day-column:nth-last-child(-n+2) .tasks-hover-tooltip {
+        left: -300px !important;
+    }
 }

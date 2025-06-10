@@ -1,5 +1,5 @@
 // src/app/components/fixtures/fixtures.component.ts
-// Updated to be customer-based with proper hover functionality
+// Fixed component with proper toggle functionality and scoped updates
 
 import { Component, OnInit, inject, signal, computed, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -48,7 +48,7 @@ export class FixturesComponent implements OnInit {
     selectedTimeSlot = signal<TimeSlot | null>(null);
     selectedSport = signal<string>('');
 
-    // Updated hover functionality - only for task badge
+    // Fixed hover functionality - only for task badge
     hoveredTaskBadge = signal<string | null>(null);
     badgeHoverTasks = signal<TaskItem[]>([]);
 
@@ -86,7 +86,6 @@ export class FixturesComponent implements OnInit {
 
     ngOnInit(): void {
         this.goToCurrentWeek();
-        this.updateAttendeeTaskCounts();
     }
 
     // Template helper methods for signal access
@@ -123,49 +122,12 @@ export class FixturesComponent implements OnInit {
 
     // Sport filter methods
     onSportFilterChange(): void {
-        this.updateAttendeeTaskCounts();
+        // Sport filter change will automatically trigger reactive updates
+        console.log('Sport filter changed to:', this.selectedSport());
     }
 
     clearSportFilter(): void {
         this.selectedSport.set('');
-        this.updateAttendeeTaskCounts();
-    }
-
-    private updateAttendeeTaskCounts(): void {
-        console.log('Updating attendee task counts with customer-based logic...');
-        const schedule = this.fixturesService.currentWeekSchedule();
-        if (!schedule) return;
-
-        const dashboardData = this.dashboardService.dashboardData();
-        if (!dashboardData?.Tasks) return;
-
-        const selectedSport = this.selectedSport();
-
-        schedule.timeSlots.forEach((timeSlot: TimeSlot) => {
-            timeSlot.attendees.forEach((attendee: Attendee) => {
-                // Count tasks where Customer name matches attendee name
-                const pendingTasks = this.getCustomerPendingTasksForSport(attendee.name, selectedSport);
-                attendee.pendingTasksCount = pendingTasks.length;
-                console.log(`Customer ${attendee.name} has ${pendingTasks.length} pending tasks`);
-            });
-        });
-    }
-
-    // Updated to use Customer field instead of AssignedTo
-    private getCustomerPendingTasksForSport(customerName: string, sport?: string): TaskItem[] {
-        const dashboardData = this.dashboardService.dashboardData();
-        if (!dashboardData?.Tasks) return [];
-
-        return dashboardData.Tasks.filter((task: TaskItem) => {
-            // Match by customer name
-            const isCustomerMatch = task.Customer.toLowerCase() === customerName.toLowerCase();
-            const isPending = task.Status === TaskItemStatus.NotStarted ||
-                task.Status === TaskItemStatus.InProgress ||
-                task.Status === TaskItemStatus.Late;
-            const matchesSport = !sport || task.SportPlayed === sport;
-
-            return isCustomerMatch && isPending && matchesSport;
-        });
     }
 
     // Template helper methods for TaskItem properties
@@ -201,7 +163,7 @@ export class FixturesComponent implements OnInit {
         return task.Updates;
     }
 
-    // Updated hover functionality - only for task badges
+    // Fixed hover functionality - only for task badges
     isTaskBadgeHovered(badgeId: string): boolean {
         return this.hoveredTaskBadge() === badgeId;
     }
@@ -210,7 +172,7 @@ export class FixturesComponent implements OnInit {
         return this.badgeHoverTasks();
     }
 
-    // Updated badge hover methods - specific to task count badge only
+    // Fixed badge hover methods - specific to task count badge only
     onBadgeHover(attendee: Attendee, event: MouseEvent): void {
         event.stopPropagation();
         console.log('Hovering over task badge for customer:', attendee.name);
@@ -272,6 +234,23 @@ export class FixturesComponent implements OnInit {
         const pendingTasks = this.getCustomerPendingTasksForSport(customerName, sport);
         console.log('Found pending tasks:', pendingTasks);
         this.badgeHoverTasks.set(pendingTasks);
+    }
+
+    // Updated to use Customer field instead of AssignedTo field
+    private getCustomerPendingTasksForSport(customerName: string, sport?: string): TaskItem[] {
+        const dashboardData = this.dashboardService.dashboardData();
+        if (!dashboardData?.Tasks) return [];
+
+        return dashboardData.Tasks.filter((task: TaskItem) => {
+            // Match by customer name
+            const isCustomerMatch = task.Customer.toLowerCase() === customerName.toLowerCase();
+            const isPending = task.Status === TaskItemStatus.NotStarted ||
+                task.Status === TaskItemStatus.InProgress ||
+                task.Status === TaskItemStatus.Late;
+            const matchesSport = !sport || task.SportPlayed === sport;
+
+            return isCustomerMatch && isPending && matchesSport;
+        });
     }
 
     getTasksForCustomer(customerName: string): TaskItem[] {
@@ -398,7 +377,7 @@ export class FixturesComponent implements OnInit {
     loadWeeklySchedule(): void {
         this.fixturesService.getWeeklySchedule(this.currentWeekStart()).subscribe({
             next: () => {
-                this.updateAttendeeTaskCounts();
+                console.log('Weekly schedule loaded successfully');
             },
             error: (error) => {
                 console.error('Error loading weekly schedule:', error);
@@ -528,6 +507,7 @@ export class FixturesComponent implements OnInit {
 
         if (this.editingTimeSlot()) {
             console.log('Updating time slot:', request);
+            // TODO: Implement update functionality
             this.closeTimeSlotModal();
         } else {
             this.fixturesService.createTimeSlot(request).subscribe({
@@ -537,6 +517,7 @@ export class FixturesComponent implements OnInit {
                 },
                 error: (error) => {
                     console.error('Error creating time slot:', error);
+                    alert('Failed to create time slot. Please try again.');
                 }
             });
         }
@@ -550,6 +531,7 @@ export class FixturesComponent implements OnInit {
                 },
                 error: (error) => {
                     console.error('Error deleting time slot:', error);
+                    alert('Failed to delete time slot. Please try again.');
                 }
             });
         }
@@ -572,6 +554,7 @@ export class FixturesComponent implements OnInit {
         const timeSlot = this.selectedTimeSlot();
         if (!timeSlot) {
             console.error('No time slot selected');
+            alert('No time slot selected. Please try again.');
             return;
         }
 
@@ -591,8 +574,23 @@ export class FixturesComponent implements OnInit {
             return;
         }
 
+        console.log('=== SAVING ATTENDEE ===');
+        console.log('Selected TimeSlot:', timeSlot);
+        console.log('TimeSlot ID:', timeSlot.id, 'Type:', typeof timeSlot.id);
+
+        // Convert to number if needed
+        const timeSlotId = parseInt(timeSlot.id.toString(), 10);
+
+        if (isNaN(timeSlotId) || timeSlotId <= 0) {
+            console.error('Invalid time slot ID:', timeSlot.id);
+            alert('Invalid time slot ID. Please refresh the page and try again.');
+            return;
+        }
+
+        console.log('Converted TimeSlot ID:', timeSlotId);
+
         const request: AddAttendeeRequest = {
-            timeSlotId: timeSlot.id,
+            timeSlotId: timeSlotId.toString(),
             name: attendeeName,
             contactInfo: {
                 email: this.attendeeFormData.email?.trim() || undefined,
@@ -600,22 +598,34 @@ export class FixturesComponent implements OnInit {
             }
         };
 
-        console.log('Adding attendee:', request);
+        console.log('Final request object:', request);
 
         this.fixturesService.addAttendee(request).subscribe({
-            next: () => {
-                console.log('Attendee added successfully');
+            next: (response) => {
+                console.log('✅ SUCCESS: Attendee added');
+                console.log('Response:', response);
                 this.closeAttendeeModal();
-                // Refresh the schedule to show the new attendee
-                this.loadWeeklySchedule();
+                alert('Attendee added successfully!');
             },
             error: (error) => {
-                console.error('Error adding attendee:', error);
-                alert('Failed to add attendee. Please try again.');
+                console.error('❌ ERROR adding attendee:', error);
+
+                let errorMessage = 'Failed to add attendee.\n';
+                if (error.error?.message) {
+                    errorMessage += error.error.message;
+                } else if (error.status === 400) {
+                    errorMessage += 'Invalid request data. Please check the form and try again.';
+                } else if (error.status === 500) {
+                    errorMessage += 'Server error occurred. Please try again later.';
+                } else {
+                    errorMessage += 'Unknown error occurred. Please try again.';
+                }
+
+                alert(errorMessage);
             }
         });
     }
-
+    // FIXED: Proper toggle functionality with unique attendee identification
     toggleAttendance(timeSlotId: string, attendee: Attendee, event: Event): void {
         event.stopPropagation();
         event.preventDefault();
@@ -648,13 +658,14 @@ export class FixturesComponent implements OnInit {
         const originalState = targetAttendee.isPresent;
         const originalCheckIn = targetAttendee.checkedInAt;
 
-        // Toggle the state
+        // Toggle the state optimistically
         const newState = !originalState;
         targetAttendee.isPresent = newState;
         targetAttendee.checkedInAt = newState ? new Date() : undefined;
 
         console.log('Updated state:', newState);
 
+        // Create attendance update object
         const update = {
             timeSlotId,
             attendeeId: attendee.id,
@@ -665,6 +676,7 @@ export class FixturesComponent implements OnInit {
         this.fixturesService.updateAttendance(update).subscribe({
             next: () => {
                 console.log('✅ Attendance updated successfully for:', targetAttendee.name);
+                // Success - the optimistic update is already applied
             },
             error: (error) => {
                 console.error('❌ Error updating attendance:', error);
@@ -686,6 +698,7 @@ export class FixturesComponent implements OnInit {
                 },
                 error: (error) => {
                     console.error('Error removing attendee:', error);
+                    alert('Failed to remove attendee. Please try again.');
                 }
             });
         }

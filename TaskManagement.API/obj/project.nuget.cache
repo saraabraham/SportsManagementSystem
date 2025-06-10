@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "zmpexvbAAb4=",
+  "dgSpecHash": "4nSvKmcbTT0=",
   "success": true,
   "projectFilePath": "/Users/sara_abraham/Desktop/Coding/Projects/Bryan's Bread/TaskManagement.API/TaskManagement.API.csproj",
   "expectedPackageFiles": [
@@ -53,5 +53,16 @@
     "/Users/sara_abraham/.nuget/packages/system.text.json/8.0.0/system.text.json.8.0.0.nupkg.sha512",
     "/Users/sara_abraham/.nuget/packages/system.threading.channels/6.0.0/system.threading.channels.6.0.0.nupkg.sha512"
   ],
-  "logs": []
+  "logs": [
+    {
+      "code": "NU1903",
+      "level": "Warning",
+      "warningLevel": 1,
+      "message": "Package 'Npgsql' 8.0.0 has a known high severity vulnerability, https://github.com/advisories/GHSA-x9vc-6hfv-hg8c",
+      "libraryId": "Npgsql",
+      "targetGraphs": [
+        "net8.0"
+      ]
+    }
+  ]
 }
