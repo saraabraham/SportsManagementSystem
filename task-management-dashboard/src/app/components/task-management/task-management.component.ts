@@ -1,8 +1,10 @@
+// src/app/components/task-management/task-management.component.ts
+// Updated with enhanced customer filtering for fixtures integration
+
 import { Component, OnInit, inject, signal, computed, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DashboardService } from '../../services/dashboard.service';
-// Ensure TaskItem, CreateTaskRequest, SPORTS_OPTIONS are correctly defined in your task.model.ts
 import { TaskItem, CreateTaskRequest, SPORTS_OPTIONS } from '../../models/task.model';
 import { TaskItemStatus } from '../../enums/task-item-status.enum';
 
@@ -18,18 +20,19 @@ export class TaskManagementComponent implements OnInit {
   @Input() highlightedTaskId: number | null = null;
 
   // Signals for component state
-  public showModal = signal(false); // Make public
-  public editingTask = signal<TaskItem | null>(null); // Make public, correct type
+  public showModal = signal(false);
+  public editingTask = signal<TaskItem | null>(null);
 
-  // 🚨 THE FIX: Convert these to signals
+  // Enhanced filter signals including customer filter
   public statusFilter = signal('');
   public sportFilter = signal('');
   public searchTerm = signal('');
+  public customerFilter = signal(''); // Customer filter for fixtures integration
 
-  // Form data (already a signal, good!)
-  public formData: any = signal(this.getEmptyFormData()); // Make public
+  // Form data
+  public formData: any = signal(this.getEmptyFormData());
 
-  // Options (already public, good!)
+  // Options
   public statusOptions = [
     { value: TaskItemStatus.NotStarted, label: 'Not Started' },
     { value: TaskItemStatus.InProgress, label: 'In Progress' },
@@ -39,34 +42,31 @@ export class TaskManagementComponent implements OnInit {
     { value: TaskItemStatus.Cancelled, label: 'Cancelled' }
   ];
 
-  public sportsOptions = SPORTS_OPTIONS; // Assuming SPORTS_OPTIONS is a string[]
+  public sportsOptions = SPORTS_OPTIONS;
 
   // Expose enum to template
   protected readonly TaskItemStatus = TaskItemStatus;
 
-  // Enhanced computed properties with debugging
+  // Enhanced computed properties with customer filtering
   filteredTasks = computed(() => {
     console.log('=== TASK MANAGEMENT: COMPUTING FILTERED TASKS ===');
     const dashboardData = this.dashboardService.dashboardData();
-    console.log('Dashboard data in computed:', dashboardData);
-
     const tasks = dashboardData?.Tasks || [];
-    console.log('Raw tasks from dashboard:', tasks);
-    console.log('Number of raw tasks:', tasks.length);
 
-    // 🚨 IMPORTANT: Access signal values using .()
+    // Get all current filter values including customer filter
     const currentStatusFilter = this.statusFilter();
     const currentSportFilter = this.sportFilter();
     const currentSearchTerm = this.searchTerm();
+    const currentCustomerFilter = this.customerFilter(); // Customer filter
 
-    console.log('Current filters (from signals):', {
+    console.log('Current filters:', {
       statusFilter: currentStatusFilter,
       sportFilter: currentSportFilter,
-      searchTerm: currentSearchTerm
+      searchTerm: currentSearchTerm,
+      customerFilter: currentCustomerFilter // Log customer filter
     });
 
     const filtered = tasks.filter(task => {
-      // 🚨 IMPORTANT: Use the signal values directly
       const matchesStatus = !currentStatusFilter || task.Status === currentStatusFilter;
       const matchesSport = !currentSportFilter || task.SportPlayed === currentSportFilter;
       const matchesSearch = !currentSearchTerm ||
@@ -74,99 +74,79 @@ export class TaskManagementComponent implements OnInit {
         task.Customer.toLowerCase().includes(currentSearchTerm.toLowerCase()) ||
         task.AssignedTo.toLowerCase().includes(currentSearchTerm.toLowerCase());
 
-      const matches = matchesStatus && matchesSport && matchesSearch;
+      // Filter by customer name (exact match for fixtures integration)
+      const matchesCustomer = !currentCustomerFilter ||
+        task.Customer.toLowerCase() === currentCustomerFilter.toLowerCase();
 
-      // Log first few tasks to see what's happening
-      if (tasks.indexOf(task) < 3) {
-        console.log(`Task "${task.Name}":`, {
-          status: task.Status,
-          sport: task.SportPlayed,
-          matchesStatus,
-          matchesSport,
-          matchesSearch,
-          finalMatch: matches
-        });
-      }
-
-      return matches;
+      return matchesStatus && matchesSport && matchesSearch && matchesCustomer;
     });
 
-    console.log('Filtered tasks result:', filtered);
-    console.log('Number of filtered tasks:', filtered.length);
-
+    console.log('Filtered tasks result:', filtered.length);
     return filtered;
   });
 
   ngOnInit(): void {
     console.log('=== TASK MANAGEMENT COMPONENT INIT ===');
-    console.log('Dashboard service:', this.dashboardService);
-    console.log('Initial loading state:', this.dashboardService.loading());
-    console.log('Initial error state:', this.dashboardService.error());
-    console.log('Initial dashboard data:', this.dashboardService.dashboardData());
-
     this.loadTasks();
   }
 
   loadTasks(): void {
     console.log('=== TASK MANAGEMENT: LOADING TASKS ===');
-    console.log('Calling getDashboardData...');
-
     this.dashboardService.getDashboardData().subscribe({
       next: (data) => {
         console.log('✅ TASK MANAGEMENT: Dashboard data loaded successfully:', data);
-        console.log('✅ TASK MANAGEMENT: Full data structure:', JSON.stringify(data, null, 2));
-        console.log('✅ TASK MANAGEMENT: Data keys:', Object.keys(data));
-        console.log('✅ TASK MANAGEMENT: Tasks property:', data.Tasks);
-        console.log('✅ TASK MANAGEMENT: Tasks type:', typeof data.Tasks);
-        console.log('✅ TASK MANAGEMENT: Tasks is Array?:', Array.isArray(data.Tasks));
-        console.log('✅ TASK MANAGEMENT: Number of tasks:', data.Tasks?.length || 0);
-
-        // Check other properties
-        console.log('✅ TASK MANAGEMENT: TaskCompletion:', data.TaskCompletion);
-        console.log('✅ TASK MANAGEMENT: ActiveTasks:', data.ActiveTasks);
-        console.log('✅ TASK MANAGEMENT: Resources:', data.Resources);
-
-        console.log('✅ TASK MANAGEMENT: Service loading state after load:', this.dashboardService.loading());
-        console.log('✅ TASK MANAGEMENT: Service dashboard data after load:', this.dashboardService.dashboardData());
       },
       error: (error) => {
         console.error('❌ TASK MANAGEMENT: Error loading tasks:', error);
-        console.error('❌ TASK MANAGEMENT: Error details:', error.error);
-        console.error('❌ TASK MANAGEMENT: Error status:', error.status);
       }
     });
   }
 
-  // No changes needed here, ngModel with signals handles it automatically
+  // Enhanced filter methods
   applyFilters(): void {
     console.log('=== APPLYING FILTERS ===');
-    // 🚨 IMPORTANT: Access signal values for logging
     console.log('Current filter values:', {
       statusFilter: this.statusFilter(),
       sportFilter: this.sportFilter(),
-      searchTerm: this.searchTerm()
+      searchTerm: this.searchTerm(),
+      customerFilter: this.customerFilter()
     });
-    // Filters are applied automatically through computed signal due to signal updates via ngModel
   }
 
   clearFilters(): void {
     console.log('=== CLEARING ALL FILTERS ===');
-    // 🚨 IMPORTANT: Use .set() to update signals
     this.statusFilter.set('');
     this.sportFilter.set('');
     this.searchTerm.set('');
+    this.customerFilter.set(''); // Clear customer filter
     console.log('Filters cleared, should show all tasks now');
+  }
+
+  // NEW: Method to apply customer filter from external navigation (fixtures)
+  applyCustomerFilter(customerName: string): void {
+    console.log('=== APPLYING CUSTOMER FILTER FROM FIXTURES ===', customerName);
+    this.customerFilter.set(customerName);
+    // Clear other filters to focus on the customer
+    this.statusFilter.set('');
+    this.sportFilter.set('');
+    this.searchTerm.set('');
+    console.log('Customer filter applied, showing tasks for:', customerName);
+  }
+
+  // Method to clear only customer filter
+  clearCustomerFilter(): void {
+    console.log('=== CLEARING CUSTOMER FILTER ===');
+    this.customerFilter.set('');
   }
 
   openCreateModal(): void {
     this.editingTask.set(null);
-    this.formData.set(this.getEmptyFormData()); // 🚨 IMPORTANT: Use .set() for formData signal
+    this.formData.set(this.getEmptyFormData());
     this.showModal.set(true);
   }
 
   editTask(task: TaskItem): void {
     this.editingTask.set(task);
-    // 🚨 IMPORTANT: Use .set() for formData signal
     this.formData.set({
       name: task.Name,
       customer: task.Customer,
@@ -174,7 +154,7 @@ export class TaskManagementComponent implements OnInit {
       sportPlayed: task.SportPlayed,
       assignedTo: task.AssignedTo,
       groupTask: task.GroupTask,
-      deadline: this.formatDateForInput(task.Deadline), // Ensure this returns 'YYYY-MM-DD'
+      deadline: this.formatDateForInput(task.Deadline),
       status: task.Status,
       workRequired: task.WorkRequired,
       percentCompleted: task.PercentCompleted,
@@ -186,38 +166,33 @@ export class TaskManagementComponent implements OnInit {
   closeModal(): void {
     this.showModal.set(false);
     this.editingTask.set(null);
-    this.formData.set(this.getEmptyFormData()); // 🚨 IMPORTANT: Use .set() for formData signal
+    this.formData.set(this.getEmptyFormData());
   }
 
   saveTask(): void {
-    const currentFormData = this.formData(); // Get current value from signal
+    const currentFormData = this.formData();
     console.log('Raw form data:', currentFormData);
 
-    // Convert date to ISO string format for API
     const deadlineDate = new Date(currentFormData.deadline);
     if (isNaN(deadlineDate.getTime())) {
       alert('Please enter a valid deadline date');
       return;
     }
 
-    const taskData: CreateTaskRequest = { // Use your CreateTaskRequest type here
+    const taskData: CreateTaskRequest = {
       name: currentFormData.name?.trim(),
       customer: currentFormData.customer?.trim(),
       phoneNo: currentFormData.phoneNo?.trim() || '',
       sportPlayed: currentFormData.sportPlayed?.trim(),
       assignedTo: currentFormData.assignedTo?.trim(),
       groupTask: currentFormData.groupTask?.trim() || 'General',
-      deadline: deadlineDate.toISOString(), // Convert to ISO string
+      deadline: deadlineDate.toISOString(),
       status: currentFormData.status || TaskItemStatus.NotStarted,
       workRequired: Number(currentFormData.workRequired) || 1,
       percentCompleted: Number(currentFormData.percentCompleted) || 0,
       updates: currentFormData.updates?.trim() || ''
     };
 
-    console.log('Processed task data:', taskData);
-    console.log('Deadline as ISO string:', taskData.deadline);
-
-    // Validation check
     const errors = [];
     if (!taskData.name) errors.push('Name is required');
     if (!taskData.customer) errors.push('Customer is required');
@@ -232,34 +207,29 @@ export class TaskManagementComponent implements OnInit {
     }
 
     if (this.editingTask()) {
-      // Update existing task
-      const taskId = this.editingTask()!.Id; // Get the ID from the editingTask signal
+      const taskId = this.editingTask()!.Id;
       console.log('Updating task ID:', taskId);
-      this.dashboardService.updateTask(taskId, taskData).subscribe({ // Pass taskId and data
+      this.dashboardService.updateTask(taskId, taskData).subscribe({
         next: (response) => {
           console.log('Task updated successfully:', response);
           this.closeModal();
-          this.loadTasks(); // Reload to ensure UI is consistent
+          this.loadTasks();
         },
         error: (error) => {
           console.error('Error updating task:', error);
-          console.error('Error details:', error.error);
           alert('Error updating task: ' + (error.error?.message || error.message));
         }
       });
     } else {
-      // Create new task
       console.log('Creating new task with data:', taskData);
       this.dashboardService.createTask(taskData).subscribe({
         next: (response) => {
           console.log('Task created successfully:', response);
           this.closeModal();
-          this.loadTasks(); // Reload to ensure UI is consistent
+          this.loadTasks();
         },
         error: (error) => {
           console.error('Error creating task:', error);
-          console.error('Full error object:', error);
-
           let errorMessage = 'Error creating task: ';
           if (error.error?.message) {
             errorMessage += error.error.message;
@@ -285,7 +255,7 @@ export class TaskManagementComponent implements OnInit {
       this.dashboardService.deleteTask(id).subscribe({
         next: () => {
           console.log('Task deleted successfully');
-          this.loadTasks(); // Reload tasks to update the list
+          this.loadTasks();
         },
         error: (error) => {
           console.error('Error deleting task:', error);
@@ -297,9 +267,8 @@ export class TaskManagementComponent implements OnInit {
 
   getEmptyFormData() {
     const today = new Date();
-    // Format today's date as 'YYYY-MM-DD' for the input type="date"
     const year = today.getFullYear();
-    const month = (today.getMonth() + 1).toString().padStart(2, '0'); // Months are 0-indexed
+    const month = (today.getMonth() + 1).toString().padStart(2, '0');
     const day = today.getDate().toString().padStart(2, '0');
     const defaultDeadline = `${year}-${month}-${day}`;
 
@@ -310,14 +279,13 @@ export class TaskManagementComponent implements OnInit {
       sportPlayed: '',
       assignedTo: '',
       groupTask: '',
-      deadline: defaultDeadline, // <--- Initialize with today's date
+      deadline: defaultDeadline,
       status: TaskItemStatus.NotStarted,
       workRequired: 1,
       percentCompleted: 0,
       updates: ''
     };
   }
-
 
   formatDate(date: Date | string): string {
     const d = new Date(date);
@@ -331,17 +299,14 @@ export class TaskManagementComponent implements OnInit {
 
   formatDateForInput(date: Date | string): string {
     const d = new Date(date);
-    // Ensure d is a valid date object before calling toISOString
     if (isNaN(d.getTime())) {
       console.warn("Attempted to format an invalid date for input:", date);
-      return ''; // Return empty string for invalid dates
+      return '';
     }
     return d.toISOString().split('T')[0];
   }
 
   getTaskRowClass(task: TaskItem): string {
-    // 🚨 Type assertion removed as it's often a sign of type mismatch.
-    // Ensure task.Status is actually of type TaskItemStatus.
     switch (task.Status) {
       case TaskItemStatus.Late:
         return 'late';
@@ -414,25 +379,23 @@ export class TaskManagementComponent implements OnInit {
 
   getDeadlineClass(deadline: Date | string): string {
     const now = new Date();
-    // Set 'now' to start of day for comparison to ignore time
     now.setHours(0, 0, 0, 0);
 
     const deadlineDate = new Date(deadline);
-    // Set 'deadlineDate' to start of day for comparison
     deadlineDate.setHours(0, 0, 0, 0);
 
     const diffMs = deadlineDate.getTime() - now.getTime();
-    const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24)); // Use Math.ceil to treat same-day as 0 days, next day as 1
+    const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
 
-    if (diffDays < 0) { // Deadline is in the past
+    if (diffDays < 0) {
       return 'deadline-overdue';
-    } else if (diffDays <= 3) { // Deadline is today or within the next 3 days
+    } else if (diffDays <= 3) {
       return 'deadline-upcoming';
     }
     return 'deadline-normal';
   }
 
-  getUpdatesPreview(updates: string | undefined): string { // Allow updates to be undefined
+  getUpdatesPreview(updates: string | undefined): string {
     if (!updates) return 'No updates';
     return updates.length > 50 ? updates.substring(0, 50) + '...' : updates;
   }

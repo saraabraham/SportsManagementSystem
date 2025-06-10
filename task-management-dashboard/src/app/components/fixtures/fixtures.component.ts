@@ -1,5 +1,5 @@
 // src/app/components/fixtures/fixtures.component.ts
-// Complete updated component with simple hover tooltip
+// Updated to be customer-based with proper hover functionality
 
 import { Component, OnInit, inject, signal, computed, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -38,6 +38,7 @@ export class FixturesComponent implements OnInit {
     // Output events for navigation to task management
     @Output() navigateToTask = new EventEmitter<number>();
     @Output() switchToTaskManagement = new EventEmitter<void>();
+    @Output() navigateToTaskWithCustomer = new EventEmitter<{ taskId: number, customerName: string }>();
 
     // Signals for component state
     currentWeekStart = signal<Date>(new Date());
@@ -46,8 +47,10 @@ export class FixturesComponent implements OnInit {
     editingTimeSlot = signal<TimeSlot | null>(null);
     selectedTimeSlot = signal<TimeSlot | null>(null);
     selectedSport = signal<string>('');
-    hoveredAttendee = signal<string | null>(null);
-    attendeeHoverTasks = signal<TaskItem[]>([]);
+
+    // Updated hover functionality - only for task badge
+    hoveredTaskBadge = signal<string | null>(null);
+    badgeHoverTasks = signal<TaskItem[]>([]);
 
     // Task modal signals
     showTasksModal = signal(false);
@@ -98,14 +101,8 @@ export class FixturesComponent implements OnInit {
             return [];
         }
 
-        // Explicitly cast 'slot.sport' to string if TimeSlot.sport is 'any' or 'unknown'
-        // or ensure TimeSlot.sport is typed as 'string'
-        // Or, more directly, cast the result of the map operation or the Set conversion.
-
-        // Option 1: Cast the result of the map operation (safer if TimeSlot.sport is string)
         const sports = [...new Set(schedule.timeSlots.map((slot: TimeSlot) => slot.sport))] as string[];
         return sports.sort();
-
     }
 
     // Filter time slots by selected sport
@@ -135,6 +132,7 @@ export class FixturesComponent implements OnInit {
     }
 
     private updateAttendeeTaskCounts(): void {
+        console.log('Updating attendee task counts with customer-based logic...');
         const schedule = this.fixturesService.currentWeekSchedule();
         if (!schedule) return;
 
@@ -145,24 +143,28 @@ export class FixturesComponent implements OnInit {
 
         schedule.timeSlots.forEach((timeSlot: TimeSlot) => {
             timeSlot.attendees.forEach((attendee: Attendee) => {
-                const pendingTasks = this.getAttendeePendingTasksForSport(attendee.name, selectedSport);
+                // Count tasks where Customer name matches attendee name
+                const pendingTasks = this.getCustomerPendingTasksForSport(attendee.name, selectedSport);
                 attendee.pendingTasksCount = pendingTasks.length;
+                console.log(`Customer ${attendee.name} has ${pendingTasks.length} pending tasks`);
             });
         });
     }
 
-    private getAttendeePendingTasksForSport(attendeeName: string, sport?: string): TaskItem[] {
+    // Updated to use Customer field instead of AssignedTo
+    private getCustomerPendingTasksForSport(customerName: string, sport?: string): TaskItem[] {
         const dashboardData = this.dashboardService.dashboardData();
         if (!dashboardData?.Tasks) return [];
 
         return dashboardData.Tasks.filter((task: TaskItem) => {
-            const isAssignedToAttendee = task.AssignedTo.toLowerCase() === attendeeName.toLowerCase();
+            // Match by customer name
+            const isCustomerMatch = task.Customer.toLowerCase() === customerName.toLowerCase();
             const isPending = task.Status === TaskItemStatus.NotStarted ||
                 task.Status === TaskItemStatus.InProgress ||
                 task.Status === TaskItemStatus.Late;
             const matchesSport = !sport || task.SportPlayed === sport;
 
-            return isAssignedToAttendee && isPending && matchesSport;
+            return isCustomerMatch && isPending && matchesSport;
         });
     }
 
@@ -199,13 +201,81 @@ export class FixturesComponent implements OnInit {
         return task.Updates;
     }
 
-    // Helper methods for hover functionality
-    isAttendeeHovered(attendeeId: string): boolean {
-        return this.hoveredAttendee() === attendeeId;
+    // Updated hover functionality - only for task badges
+    isTaskBadgeHovered(badgeId: string): boolean {
+        return this.hoveredTaskBadge() === badgeId;
     }
 
     getHoverTasks(): TaskItem[] {
-        return this.attendeeHoverTasks();
+        return this.badgeHoverTasks();
+    }
+
+    // Updated badge hover methods - specific to task count badge only
+    onBadgeHover(attendee: Attendee, event: MouseEvent): void {
+        event.stopPropagation();
+        console.log('Hovering over task badge for customer:', attendee.name);
+
+        const badgeId = `badge_${attendee.id}`;
+        this.hoveredTaskBadge.set(badgeId);
+        this.loadCustomerTasksForHover(attendee.name, this.selectedSport());
+    }
+
+    onBadgeLeave(): void {
+        console.log('Leaving task badge hover');
+        this.hoveredTaskBadge.set(null);
+        this.badgeHoverTasks.set([]);
+    }
+
+    // Updated to navigate with customer name for filtering
+    onTaskClick(taskId: number, event: Event): void {
+        event.stopPropagation();
+        console.log('Task clicked:', taskId);
+
+        // Get the customer name from the hovered badge
+        const customerName = this.getCustomerNameFromHoveredBadge();
+
+        // Close any open tooltips
+        this.onBadgeLeave();
+
+        // Emit events to navigate to task management with customer filter
+        if (customerName) {
+            this.navigateToTaskWithCustomer.emit({ taskId, customerName });
+        } else {
+            this.navigateToTask.emit(taskId);
+        }
+        this.switchToTaskManagement.emit();
+    }
+
+    private getCustomerNameFromHoveredBadge(): string | null {
+        const hoveredBadgeId = this.hoveredTaskBadge();
+        if (!hoveredBadgeId) return null;
+
+        // Extract attendee ID from badge ID
+        const attendeeId = hoveredBadgeId.replace('badge_', '');
+
+        // Find the attendee in current schedule
+        const schedule = this.fixturesService.currentWeekSchedule();
+        if (!schedule) return null;
+
+        for (const timeSlot of schedule.timeSlots) {
+            const attendee = timeSlot.attendees.find(a => a.id === attendeeId);
+            if (attendee) {
+                return attendee.name;
+            }
+        }
+
+        return null;
+    }
+
+    loadCustomerTasksForHover(customerName: string, sport?: string): void {
+        console.log('Loading tasks for hover - Customer:', customerName, 'sport:', sport);
+        const pendingTasks = this.getCustomerPendingTasksForSport(customerName, sport);
+        console.log('Found pending tasks:', pendingTasks);
+        this.badgeHoverTasks.set(pendingTasks);
+    }
+
+    getTasksForCustomer(customerName: string): TaskItem[] {
+        return this.getCustomerPendingTasksForSport(customerName, this.selectedSport());
     }
 
     getTaskPriorityClass(task: TaskItem): string {
@@ -232,7 +302,7 @@ export class FixturesComponent implements OnInit {
     // Task modal methods
     openTasksModal(attendee: Attendee): void {
         this.selectedAttendee.set(attendee);
-        const tasks = this.getTasksForAttendee(attendee.name);
+        const tasks = this.getTasksForCustomer(attendee.name);
         this.attendeeTasks.set(tasks);
         this.showTasksModal.set(true);
     }
@@ -241,32 +311,6 @@ export class FixturesComponent implements OnInit {
         this.showTasksModal.set(false);
         this.selectedAttendee.set(null);
         this.attendeeTasks.set([]);
-    }
-
-    // Simple hover methods (no complex portal tooltip)
-    onAttendeeHover(attendee: Attendee, event: MouseEvent): void {
-        this.hoveredAttendee.set(attendee.id);
-        this.loadAttendeeTasksForHover(attendee.name, this.selectedSport());
-    }
-
-    onAttendeeLeave(): void {
-        this.hoveredAttendee.set(null);
-        this.attendeeHoverTasks.set([]);
-    }
-
-    onTaskClick(taskId: number, event: Event): void {
-        event.stopPropagation();
-        this.navigateToTask.emit(taskId);
-        this.switchToTaskManagement.emit();
-    }
-
-    loadAttendeeTasksForHover(attendeeName: string, sport?: string): void {
-        const pendingTasks = this.getAttendeePendingTasksForSport(attendeeName, sport);
-        this.attendeeHoverTasks.set(pendingTasks);
-    }
-
-    getTasksForAttendee(attendeeName: string): TaskItem[] {
-        return this.getAttendeePendingTasksForSport(attendeeName, this.selectedSport());
     }
 
     getTaskStatusClass(status: TaskItemStatus): string {
@@ -326,159 +370,6 @@ export class FixturesComponent implements OnInit {
             email: '',
             phone: ''
         };
-    }
-
-    // Bulk Operations
-    markAllPresent(timeSlot: TimeSlot): void {
-        if (confirm('Mark all attendees as present?')) {
-            timeSlot.attendees.forEach((attendee: Attendee) => {
-                if (!attendee.isPresent) {
-                    this.toggleAttendance(timeSlot.id, attendee, new Event('click'));
-                }
-            });
-        }
-    }
-
-    markAllAbsent(timeSlot: TimeSlot): void {
-        if (confirm('Mark all attendees as absent?')) {
-            timeSlot.attendees.forEach((attendee: Attendee) => {
-                if (attendee.isPresent) {
-                    this.toggleAttendance(timeSlot.id, attendee, new Event('click'));
-                }
-            });
-        }
-    }
-
-    exportAttendanceReport(): void {
-        const schedule = this.fixturesService.currentWeekSchedule();
-        if (!schedule) return;
-
-        let report = `Weekly Attendance Report\n`;
-        report += `Week: ${this.formatWeekRange()}\n\n`;
-
-        schedule.timeSlots.forEach((timeSlot: TimeSlot) => {
-            report += `${timeSlot.dayOfWeek} - ${this.fixturesService.formatTimeRange(timeSlot.startTime, timeSlot.endTime)}\n`;
-            report += `Sport: ${timeSlot.sport}\n`;
-            if (timeSlot.location) {
-                report += `Location: ${timeSlot.location}\n`;
-            }
-            report += `Attendees (${this.getPresentCount(timeSlot)}/${timeSlot.attendees.length} present):\n`;
-
-            timeSlot.attendees.forEach((attendee: Attendee) => {
-                const status = attendee.isPresent ? '✓ Present' : '✗ Absent';
-                const checkIn = attendee.checkedInAt ? ` (${this.formatTime(attendee.checkedInAt)})` : '';
-                report += ` - ${attendee.name}: ${status}${checkIn}\n`;
-            });
-
-            report += '\n';
-        });
-
-        // Create and download the report
-        const blob = new Blob([report], { type: 'text/plain' });
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `attendance-report-${this.formatWeekRange().replace(/\s/g, '-')}.txt`;
-        link.click();
-        window.URL.revokeObjectURL(url);
-    }
-
-    // Quick Actions
-    addQuickTimeSlot(dayOfWeek: DayOfWeek): void {
-        this.timeSlotFormData = {
-            dayOfWeek: dayOfWeek,
-            sport: 'Football', // Default sport
-            startTime: '09:00',
-            endTime: '10:00',
-            maxCapacity: 20,
-            location: '',
-            notes: ''
-        };
-        this.showTimeSlotModal.set(true);
-    }
-
-    duplicateTimeSlot(timeSlot: TimeSlot): void {
-        this.timeSlotFormData = {
-            dayOfWeek: timeSlot.dayOfWeek,
-            sport: timeSlot.sport,
-            startTime: timeSlot.endTime, // Start where the previous one ended
-            endTime: this.addHourToTime(timeSlot.endTime),
-            maxCapacity: timeSlot.maxCapacity,
-            location: timeSlot.location,
-            notes: timeSlot.notes
-        };
-        this.showTimeSlotModal.set(true);
-    }
-
-    private addHourToTime(time: string): string {
-        const [hours, minutes] = time.split(':').map(Number);
-        const newHours = (hours + 1) % 24;
-        return `${newHours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
-    }
-
-    // Statistics
-    getWeeklyStats() {
-        const schedule = this.fixturesService.currentWeekSchedule();
-        if (!schedule) return null;
-
-        const totalSlots = schedule.timeSlots.length;
-        const totalAttendees = schedule.timeSlots.reduce((sum: number, slot: TimeSlot) => sum + slot.attendees.length, 0);
-        const totalPresent = schedule.timeSlots.reduce((sum: number, slot: TimeSlot) => sum + this.getPresentCount(slot), 0);
-        const attendanceRate = totalAttendees > 0 ? Math.round((totalPresent / totalAttendees) * 100) : 0;
-
-        const sportStats = schedule.timeSlots.reduce((stats: Record<string, number>, slot: TimeSlot) => {
-            stats[slot.sport] = (stats[slot.sport] || 0) + 1;
-            return stats;
-        }, {} as Record<string, number>);
-
-        return {
-            totalSlots,
-            totalAttendees,
-            totalPresent,
-            attendanceRate,
-            sportStats
-        };
-    }
-
-    // Search and Filter
-    searchAttendees(searchTerm: string): void {
-        // Implementation for searching attendees across all time slots
-    }
-
-    filterByCapacity(minCapacity: number): TimeSlot[] {
-        const schedule = this.fixturesService.currentWeekSchedule();
-        if (!schedule) return [];
-
-        return schedule.timeSlots.filter((slot: TimeSlot) =>
-            (slot.maxCapacity || 0) >= minCapacity
-        );
-    }
-
-    getOvercapacitySlots(): TimeSlot[] {
-        const schedule = this.fixturesService.currentWeekSchedule();
-        if (!schedule) return [];
-
-        return schedule.timeSlots.filter((slot: TimeSlot) =>
-            slot.maxCapacity && slot.attendees.length > slot.maxCapacity
-        );
-    }
-
-    getUnderfilledSlots(): TimeSlot[] {
-        const schedule = this.fixturesService.currentWeekSchedule();
-        if (!schedule) return [];
-
-        return schedule.timeSlots.filter((slot: TimeSlot) =>
-            slot.maxCapacity && slot.attendees.length < slot.maxCapacity * 0.5
-        );
-    }
-
-    // Notification helpers (for future integration)
-    notifyLateAttendees(): void {
-        console.log('Notification feature coming soon');
-    }
-
-    sendWeeklyReminder(): void {
-        console.log('Weekly reminder feature coming soon');
     }
 
     // Week Navigation
@@ -664,7 +555,7 @@ export class FixturesComponent implements OnInit {
         }
     }
 
-    // Attendee Management
+    // Attendee/Customer Management
     openAddAttendeeModal(timeSlot: TimeSlot): void {
         this.selectedTimeSlot.set(timeSlot);
         this.attendeeFormData = this.getEmptyAttendeeForm();
@@ -679,44 +570,108 @@ export class FixturesComponent implements OnInit {
 
     saveAttendee(): void {
         const timeSlot = this.selectedTimeSlot();
-        if (!timeSlot) return;
+        if (!timeSlot) {
+            console.error('No time slot selected');
+            return;
+        }
+
+        const attendeeName = this.attendeeFormData.name?.trim();
+        if (!attendeeName) {
+            alert('Attendee name is required');
+            return;
+        }
+
+        // Check if attendee already exists in this time slot
+        const existingAttendee = timeSlot.attendees.find(a =>
+            a.name.toLowerCase() === attendeeName.toLowerCase()
+        );
+
+        if (existingAttendee) {
+            alert('This attendee is already registered for this time slot');
+            return;
+        }
 
         const request: AddAttendeeRequest = {
             timeSlotId: timeSlot.id,
-            name: this.attendeeFormData.name,
+            name: attendeeName,
             contactInfo: {
-                email: this.attendeeFormData.email || undefined,
-                phone: this.attendeeFormData.phone || undefined
+                email: this.attendeeFormData.email?.trim() || undefined,
+                phone: this.attendeeFormData.phone?.trim() || undefined
             }
         };
+
+        console.log('Adding attendee:', request);
 
         this.fixturesService.addAttendee(request).subscribe({
             next: () => {
                 console.log('Attendee added successfully');
                 this.closeAttendeeModal();
+                // Refresh the schedule to show the new attendee
+                this.loadWeeklySchedule();
             },
             error: (error) => {
                 console.error('Error adding attendee:', error);
+                alert('Failed to add attendee. Please try again.');
             }
         });
     }
 
     toggleAttendance(timeSlotId: string, attendee: Attendee, event: Event): void {
         event.stopPropagation();
+        event.preventDefault();
+
+        console.log('=== TOGGLE ATTENDANCE ===');
+        console.log('Time Slot ID:', timeSlotId);
+        console.log('Attendee:', attendee.name, 'ID:', attendee.id);
+        console.log('Current state:', attendee.isPresent);
+
+        // Find the specific time slot and attendee to ensure we're working with the right objects
+        const currentSchedule = this.fixturesService.currentWeekSchedule();
+        if (!currentSchedule) {
+            console.error('No current schedule available');
+            return;
+        }
+
+        const timeSlot = currentSchedule.timeSlots.find(ts => ts.id === timeSlotId);
+        if (!timeSlot) {
+            console.error('Time slot not found:', timeSlotId);
+            return;
+        }
+
+        const targetAttendee = timeSlot.attendees.find(a => a.id === attendee.id);
+        if (!targetAttendee) {
+            console.error('Attendee not found:', attendee.id);
+            return;
+        }
+
+        // Store original state for rollback
+        const originalState = targetAttendee.isPresent;
+        const originalCheckIn = targetAttendee.checkedInAt;
+
+        // Toggle the state
+        const newState = !originalState;
+        targetAttendee.isPresent = newState;
+        targetAttendee.checkedInAt = newState ? new Date() : undefined;
+
+        console.log('Updated state:', newState);
 
         const update = {
             timeSlotId,
             attendeeId: attendee.id,
-            isPresent: !attendee.isPresent,
-            checkedInAt: !attendee.isPresent ? new Date() : undefined
+            isPresent: newState,
+            checkedInAt: newState ? new Date() : undefined
         };
 
         this.fixturesService.updateAttendance(update).subscribe({
             next: () => {
-                console.log('Attendance updated successfully');
+                console.log('✅ Attendance updated successfully for:', targetAttendee.name);
             },
             error: (error) => {
-                console.error('Error updating attendance:', error);
+                console.error('❌ Error updating attendance:', error);
+                // Rollback on error
+                targetAttendee.isPresent = originalState;
+                targetAttendee.checkedInAt = originalCheckIn;
+                alert('Failed to update attendance. Please try again.');
             }
         });
     }

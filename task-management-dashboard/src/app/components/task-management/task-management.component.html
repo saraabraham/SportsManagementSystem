@@ -28,6 +28,9 @@
             </select>
         </div>
 
+        <!-- Hidden customer filter - functional but not visible -->
+        <input type="hidden" [(ngModel)]="customerFilter" (ngModelChange)="applyFilters()">
+
         <div class="filter-group">
             <label>Search:</label>
             <input type="text" [(ngModel)]="searchTerm" (input)="applyFilters()"
@@ -37,6 +40,19 @@
         <div class="filter-group">
             <button class="btn btn-secondary" (click)="clearFilters()">Clear All Filters</button>
         </div>
+
+        <!-- Show customer filter status when active -->
+        @if (customerFilter()) {
+        <div class="filter-group">
+            <div class="active-customer-filter">
+                <i class="fas fa-filter"></i>
+                Showing tasks for: <strong>{{ customerFilter() }}</strong>
+                <button class="btn-clear-customer" (click)="clearCustomerFilter()" title="Clear customer filter">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+        }
     </div>
 
     <!-- Tasks Table -->
@@ -84,7 +100,8 @@
             </thead>
             <tbody>
                 @for (task of filteredTasks(); track task.Id) {
-                <tr [class]="getTaskRowClass(task)">
+                <tr [class]="getTaskRowClass(task)" [attr.data-task-id]="task.Id"
+                    [class.task-highlighted]="highlightedTaskId === task.Id">
                     <td>
                         <strong>{{ task.Name }}</strong>
                         <small class="group-tag">{{ task.GroupTask }}</small>
@@ -189,11 +206,10 @@
                         @if (phoneNumberInput.invalid && (phoneNumberInput.touched || phoneNumberInput.dirty)) {
                         <div class="error-message">
                             @if (phoneNumberInput.errors?.['required']) {
-                            <span>Customer Name is required.</span>
+                            <span>Phone Number is required.</span>
                             }
                         </div>
                         }
-
                     </div>
 
                     <div class="form-group">
@@ -231,7 +247,7 @@
 
                     <div class="form-group">
                         <label for="group">Group/Category</label>
-                        <input type="text" id="group" [(ngModel)]="formData.groupTask" name="group">
+                        <input type="text" id="group" [(ngModel)]="formData().groupTask" name="group">
                     </div>
 
                     <div class="form-group">
@@ -244,16 +260,13 @@
                             @if (dueDateInput.errors?.['required']) {
                             <span>Deadline is required.</span>
                             }
-                            @if (dueDateInput.errors?.['matDatepickerParse'] ||
-                            dueDateInput.errors?.['matDatepickerMax'] || dueDateInput.errors?.['matDatepickerMin']) {
-                            }
                         </div>
                         }
                     </div>
 
                     <div class="form-group">
                         <label for="taskStatus">Status</label>
-                        <select id="taskStatus" [(ngModel)]="formData.status" name="taskStatus">
+                        <select id="taskStatus" [(ngModel)]="formData().status" name="taskStatus">
                             @for (status of statusOptions; track status.value) {
                             <option [value]="status.value">{{ status.label }}</option>
                             }
@@ -269,9 +282,6 @@
                         <div class="error-message">
                             @if (hoursRequiredInput.errors?.['min']) {
                             <span>Work Required must be at least 1 hour.</span>
-                            }
-                            @if (hoursRequiredInput.errors?.['required']) {
-                            <span>Work Required is required.</span>
                             }
                         </div>
                         }
@@ -291,18 +301,14 @@
                             @if (completionPercentInput.errors?.['max']) {
                             <span>Progress cannot be more than 100%.</span>
                             }
-                            @if (completionPercentInput.errors?.['required']) {
-                            <span>Progress is required.</span>
-                            }
                         </div>
                         }
-
                     </div>
                 </div>
 
                 <div class="form-group full-width">
                     <label for="taskUpdates">Updates/Notes</label>
-                    <textarea id="taskUpdates" [(ngModel)]="formData.updates" name="taskUpdates" rows="3"
+                    <textarea id="taskUpdates" [(ngModel)]="formData().updates" name="taskUpdates" rows="3"
                         placeholder="Add any updates or notes about this task..."></textarea>
                 </div>
 

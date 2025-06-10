@@ -1,3 +1,5 @@
+<!-- src/app/components/fixtures/fixtures.component.html - Updated with customer-based logic and proper layout -->
+
 <div class="fixtures-container">
     <!-- Header Section -->
     <div class="header-section">
@@ -74,171 +76,182 @@
     </div>
     } @else {
     <!-- Weekly Schedule Grid -->
-    <div class="schedule-grid">
-        @for (day of getWeekDays(); track day.date.getTime()) {
-        <div class="day-column">
-            <div class="day-header" [class.today]="isToday(day.date)">
-                <h3>{{ day.name }}</h3>
-                <span class="date">{{ formatDate(day.date) }}</span>
-            </div>
+    <div class="schedule-wrapper">
+        <div class="schedule-grid">
+            @for (day of getWeekDays(); track day.date.getTime()) {
+            <div class="day-column">
+                <div class="day-header" [class.today]="isToday(day.date)">
+                    <h3>{{ day.name }}</h3>
+                    <span class="date">{{ formatDate(day.date) }}</span>
+                </div>
 
-            <div class="time-slots">
-                @for (timeSlot of getTimeSlotsForDay(day.dayOfWeek); track timeSlot.id) {
-                <div class="time-slot-card" [attr.data-sport]="timeSlot.sport.toLowerCase()">
-                    <div class="time-slot-header">
-                        <div class="time-range">
-                            <i class="fas fa-clock"></i>
-                            {{ fixturesService.formatTimeRange(timeSlot.startTime, timeSlot.endTime) }}
-                        </div>
-                        <div class="sport-badge">
-                            <i [class]="getSportIcon(timeSlot.sport)"></i>
-                            {{ timeSlot.sport }}
-                        </div>
-                        <div class="actions">
-                            <button class="btn-icon" (click)="editTimeSlot(timeSlot)" title="Edit">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <button class="btn-icon delete" (click)="deleteTimeSlot(timeSlot.id)" title="Delete">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </div>
-                    </div>
-
-                    @if (timeSlot.location) {
-                    <div class="location">
-                        <i class="fas fa-map-marker-alt"></i>
-                        {{ timeSlot.location }}
-                    </div>
-                    }
-
-                    <div class="capacity-info">
-                        <span class="attendee-count">
-                            {{ timeSlot.attendees.length }}{{ timeSlot.maxCapacity ? '/' + timeSlot.maxCapacity : '' }}
-                            attendees
-                        </span>
-                        <span class="present-count">
-                            {{ getPresentCount(timeSlot) }} present
-                        </span>
-                    </div>
-
-                    <div class="attendees-section">
-                        <div class="attendees-header">
-                            <span>Attendees</span>
-                            <button class="btn-small" (click)="openAddAttendeeModal(timeSlot)">
-                                <i class="fas fa-user-plus"></i> Add
-                            </button>
+                <div class="time-slots">
+                    @for (timeSlot of getTimeSlotsForDay(day.dayOfWeek); track timeSlot.id) {
+                    <div class="time-slot-card" [attr.data-sport]="timeSlot.sport.toLowerCase()">
+                        <div class="time-slot-header">
+                            <div class="time-range">
+                                <i class="fas fa-clock"></i>
+                                {{ fixturesService.formatTimeRange(timeSlot.startTime, timeSlot.endTime) }}
+                            </div>
+                            <div class="sport-badge">
+                                <i [class]="getSportIcon(timeSlot.sport)"></i>
+                                {{ timeSlot.sport }}
+                            </div>
+                            <div class="actions">
+                                <button class="btn-icon" (click)="editTimeSlot(timeSlot)" title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn-icon delete" (click)="deleteTimeSlot(timeSlot.id)" title="Delete">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
                         </div>
 
-                        <div class="attendees-list">
-                            @for (attendee of timeSlot.attendees; track attendee.id) {
-                            <div class="attendee-item" [class.present]="attendee.isPresent"
-                                [class.has-tasks]="(attendee.pendingTasksCount || 0) > 0"
-                                [class.hovered]="isAttendeeHovered(attendee.id)"
-                                (mouseenter)="onAttendeeHover(attendee, $event)" (mouseleave)="onAttendeeLeave()">
+                        @if (timeSlot.location) {
+                        <div class="location">
+                            <i class="fas fa-map-marker-alt"></i>
+                            {{ timeSlot.location }}
+                        </div>
+                        }
 
-                                <div class="attendee-info">
-                                    <div class="attendee-name">
-                                        {{ attendee.name }}
-                                        @if ((attendee.pendingTasksCount || 0) > 0) {
-                                        <span class="task-count-badge"
-                                            [attr.title]="selectedSport() ? 'Pending ' + selectedSport() + ' tasks' : 'Pending tasks'">
-                                            {{ attendee.pendingTasksCount }}
-                                        </span>
-                                        }
-                                    </div>
-                                    @if (attendee.isPresent && attendee.checkedInAt) {
-                                    <div class="check-in-time">
-                                        Checked in at {{ formatTime(attendee.checkedInAt) }}
-                                    </div>
-                                    }
-                                </div>
+                        <div class="capacity-info">
+                            <span class="attendee-count">
+                                {{ timeSlot.attendees.length }}{{ timeSlot.maxCapacity ? '/' + timeSlot.maxCapacity : ''
+                                }}
+                                attendees
+                            </span>
+                            <span class="present-count">
+                                {{ getPresentCount(timeSlot) }} present
+                            </span>
+                        </div>
 
-                                <div class="attendee-actions">
-                                    <button class="attendance-toggle" [class.present]="attendee.isPresent"
-                                        title="Toggle attendance"
-                                        (click)="toggleAttendance(timeSlot.id, attendee, $event)">
-                                        <i [class]="attendee.isPresent ? 'fas fa-check-circle' : 'far fa-circle'"></i>
-                                    </button>
-                                    <button class="btn-icon-small delete"
-                                        (click)="removeAttendee(timeSlot.id, attendee.id, $event)"
-                                        title="Remove attendee">
-                                        <i class="fas fa-times"></i>
-                                    </button>
-                                </div>
+                        <div class="attendees-section">
+                            <div class="attendees-header">
+                                <span>Attendees</span>
+                                <button class="btn-small" (click)="openAddAttendeeModal(timeSlot)">
+                                    <i class="fas fa-user-plus"></i> Add
+                                </button>
+                            </div>
 
-                                <!-- Simple hover tooltip positioned near the element -->
-                                @if (isAttendeeHovered(attendee.id) && getHoverTasks().length > 0) {
-                                <div class="tasks-hover-tooltip">
-                                    <div class="tooltip-header">
-                                        @if (selectedSport()) {
-                                        <span>{{ selectedSport() }} Tasks for {{ attendee.name }}</span>
-                                        } @else {
-                                        <span>Pending Tasks for {{ attendee.name }}</span>
-                                        }
-                                        <small>({{ getHoverTasks().length }} task{{ getHoverTasks().length === 1 ? '' :
-                                            's' }})</small>
-                                    </div>
+                            <div class="attendees-list">
+                                @for (attendee of timeSlot.attendees; track attendee.id) {
+                                <div class="attendee-item" [class.present]="attendee.isPresent"
+                                    [class.has-tasks]="(attendee.pendingTasksCount || 0) > 0">
 
-                                    <div class="tooltip-tasks">
-                                        @for (task of getHoverTasks(); track getTaskId(task)) {
-                                        <div class="tooltip-task-item" [class]="getTaskPriorityClass(task)"
-                                            (click)="onTaskClick(getTaskId(task), $event)"
-                                            [attr.title]="'Click to view in Task Management'">
+                                    <div class="attendee-info">
+                                        <div class="attendee-name">
+                                            {{ attendee.name }}
+                                            <!-- Task badge with hover - only hover trigger -->
+                                            @if ((attendee.pendingTasksCount || 0) > 0) {
+                                            <span class="task-count-badge"
+                                                [attr.title]="selectedSport() ? 'Pending ' + selectedSport() + ' tasks' : 'Pending tasks'"
+                                                (mouseenter)="onBadgeHover(attendee, $event)"
+                                                (mouseleave)="onBadgeLeave()">
+                                                {{ attendee.pendingTasksCount }}
 
-                                            <div class="task-summary">
-                                                <span class="task-name">{{ getTaskName(task) }}</span>
-                                                <span class="task-status"
-                                                    [class]="getTaskStatusClass(getTaskStatus(task))">
-                                                    {{ getTaskStatusText(getTaskStatus(task)) }}
-                                                </span>
-                                            </div>
+                                                <!-- TOOLTIP - Only shows on badge hover -->
+                                                @if (isTaskBadgeHovered('badge_' + attendee.id) &&
+                                                getHoverTasks().length > 0) {
+                                                <div class="tasks-hover-tooltip">
+                                                    <div class="tooltip-header">
+                                                        @if (selectedSport()) {
+                                                        <span>{{ selectedSport() }} Tasks for {{ attendee.name }}</span>
+                                                        } @else {
+                                                        <span>Pending Tasks for {{ attendee.name }}</span>
+                                                        }
+                                                        <small>({{ getHoverTasks().length }} task{{
+                                                            getHoverTasks().length
+                                                            === 1 ? '' : 's' }})</small>
+                                                    </div>
 
-                                            <div class="task-details">
-                                                <span class="task-customer">{{ getTaskCustomer(task) }}</span>
-                                                <span class="task-deadline">Due: {{
-                                                    formatTaskDate(getTaskDeadline(task)) }}</span>
-                                                <span class="task-progress">{{ getTaskPercentCompleted(task) }}%
-                                                    done</span>
-                                            </div>
+                                                    <div class="tooltip-tasks">
+                                                        @for (task of getHoverTasks(); track getTaskId(task)) {
+                                                        <div class="tooltip-task-item"
+                                                            [class]="getTaskPriorityClass(task)"
+                                                            (click)="onTaskClick(getTaskId(task), $event)"
+                                                            [attr.title]="'Click to view in Task Management'">
+
+                                                            <div class="task-summary">
+                                                                <span class="task-name">{{ getTaskName(task) }}</span>
+                                                                <span class="task-status"
+                                                                    [class]="getTaskStatusClass(getTaskStatus(task))">
+                                                                    {{ getTaskStatusText(getTaskStatus(task)) }}
+                                                                </span>
+                                                            </div>
+
+                                                            <div class="task-details">
+                                                                <span class="task-customer">{{ getTaskCustomer(task)
+                                                                    }}</span>
+                                                                <span class="task-deadline">Due: {{
+                                                                    formatTaskDate(getTaskDeadline(task)) }}</span>
+                                                                <span class="task-progress">{{
+                                                                    getTaskPercentCompleted(task)
+                                                                    }}% done</span>
+                                                            </div>
+                                                        </div>
+                                                        }
+                                                    </div>
+
+                                                    <div class="tooltip-footer">
+                                                        <small>
+                                                            <i class="fas fa-mouse-pointer"></i>
+                                                            Click any task to view in Task Management
+                                                        </small>
+                                                    </div>
+                                                </div>
+                                                }
+                                            </span>
+                                            }
+                                        </div>
+                                        @if (attendee.isPresent && attendee.checkedInAt) {
+                                        <div class="check-in-time">
+                                            Checked in at {{ formatTime(attendee.checkedInAt) }}
                                         </div>
                                         }
                                     </div>
 
-                                    <div class="tooltip-footer">
-                                        <small>
-                                            <i class="fas fa-mouse-pointer"></i>
-                                            Click any task to view in Task Management
-                                        </small>
+                                    <div class="attendee-actions">
+                                        <button class="attendance-toggle" [class.present]="attendee.isPresent"
+                                            title="Toggle attendance"
+                                            [id]="'attendance-' + timeSlot.id + '-' + attendee.id"
+                                            (click)="toggleAttendance(timeSlot.id, attendee, $event)">
+                                            <i
+                                                [class]="attendee.isPresent ? 'fas fa-check-circle' : 'far fa-circle'"></i>
+                                        </button>
+                                        <button class="btn-icon-small delete"
+                                            (click)="removeAttendee(timeSlot.id, attendee.id, $event)"
+                                            title="Remove attendee">
+                                            <i class="fas fa-times"></i>
+                                        </button>
                                     </div>
                                 </div>
                                 }
-                            </div>
-                            }
 
-                            @if (timeSlot.attendees.length === 0) {
-                            <div class="no-attendees">
-                                <i class="fas fa-users"></i>
-                                <span>No attendees yet</span>
+                                @if (timeSlot.attendees.length === 0) {
+                                <div class="no-attendees">
+                                    <i class="fas fa-users"></i>
+                                    <span>No attendees yet</span>
+                                </div>
+                                }
                             </div>
-                            }
                         </div>
                     </div>
-                </div>
-                }
+                    }
 
-                @if (getTimeSlotsForDay(day.dayOfWeek).length === 0) {
-                <div class="no-slots">
-                    <i class="fas fa-calendar-plus"></i>
-                    @if (selectedSport()) {
-                    <span>No {{ selectedSport().toLowerCase() }} slots scheduled</span>
-                    } @else {
-                    <span>No time slots scheduled</span>
+                    @if (getTimeSlotsForDay(day.dayOfWeek).length === 0) {
+                    <div class="no-slots">
+                        <i class="fas fa-calendar-plus"></i>
+                        @if (selectedSport()) {
+                        <span>No {{ selectedSport().toLowerCase() }} slots scheduled</span>
+                        } @else {
+                        <span>No time slots scheduled</span>
+                        }
+                    </div>
                     }
                 </div>
-                }
             </div>
+            }
         </div>
-        }
     </div>
     }
 
@@ -314,7 +327,7 @@
     </div>
     }
 
-    <!-- Add Attendee Modal -->
+    <!-- Add Customer Modal -->
     @if (showAttendeeModal()) {
     <div class="modal-overlay" (click)="closeAttendeeModal()">
         <div class="modal-content small" (click)="$event.stopPropagation()">
@@ -325,7 +338,7 @@
 
             <form class="modal-body" (ngSubmit)="saveAttendee()" #attendeeForm="ngForm">
                 <div class="form-group">
-                    <label for="attendeeName">Name *</label>
+                    <label for="attendeeName">Attendee Name *</label>
                     <input type="text" id="attendeeName" [(ngModel)]="attendeeFormData.name" name="attendeeName"
                         required placeholder="Enter attendee name">
                 </div>
@@ -333,7 +346,7 @@
                 <div class="form-group">
                     <label for="attendeeEmail">Email</label>
                     <input type="email" id="attendeeEmail" [(ngModel)]="attendeeFormData.email" name="attendeeEmail"
-                        placeholder="attendee@example.com">
+                        placeholder="customer@example.com">
                 </div>
 
                 <div class="form-group">
@@ -353,7 +366,7 @@
     </div>
     }
 
-    <!-- Attendee Tasks Modal -->
+    <!-- Customer Tasks Modal -->
     @if (showTasksModal()) {
     <div class="modal-overlay" (click)="closeTasksModal()">
         <div class="modal-content" (click)="$event.stopPropagation()">

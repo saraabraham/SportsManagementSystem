@@ -52,6 +52,7 @@ body {
     text-decoration: none;
     text-align: center;
     transition: var(--transition);
+    -webkit-user-select: none;
     user-select: none;
 }
 

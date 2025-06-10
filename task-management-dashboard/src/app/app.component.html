@@ -1,4 +1,4 @@
-<!-- src/app/app.component.html - Updated with navigation events -->
+<!-- src/app/app.component.html - Updated with enhanced navigation events -->
 
 <div class="app-container">
   <header class="header">
@@ -31,7 +31,8 @@
     } @else if (activeTab() === 'tasks') {
     <app-task-management [highlightedTaskId]="highlightedTaskId()" />
     } @else if (activeTab() === 'fixtures') {
-    <app-fixtures (navigateToTask)="onNavigateToTask($event)" (switchToTaskManagement)="onSwitchToTaskManagement()" />
+    <app-fixtures (navigateToTask)="onNavigateToTask($event)" (switchToTaskManagement)="onSwitchToTaskManagement()"
+      (navigateToTaskWithCustomer)="onNavigateToTaskWithCustomer($event)" />
     }
   </main>
 </div>
