@@ -1,7 +1,7 @@
 // src/app/components/fixtures/fixtures.component.ts
 // Fixed component with proper toggle functionality and scoped updates
 
-import { Component, OnInit, inject, signal, computed, Output, EventEmitter, Renderer2 } from '@angular/core';
+import { Component, OnInit, inject, signal, computed, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { FixturesService } from '../../services/fixtures.service';
@@ -14,7 +14,6 @@ import {
     AddAttendeeRequest,
     DAYS_OF_WEEK
 } from '../../models/fixtures.model';
-
 
 import { TaskItem, SPORTS_OPTIONS } from '../../models/task.model';
 import { TaskItemStatus } from '../../enums/task-item-status.enum';
@@ -33,11 +32,6 @@ interface WeekDay {
     styleUrls: ['./fixtures.component.css']
 })
 export class FixturesComponent implements OnInit {
-    private renderer: Renderer2;
-
-    constructor(renderer: Renderer2) {
-        this.renderer = renderer;
-    }
     protected fixturesService = inject(FixturesService);
     private dashboardService = inject(DashboardService);
 
@@ -54,7 +48,7 @@ export class FixturesComponent implements OnInit {
     selectedTimeSlot = signal<TimeSlot | null>(null);
     selectedSport = signal<string>('');
 
-    // Updated hover functionality - only for task badge
+    // Fixed hover functionality - only for task badge
     hoveredTaskBadge = signal<string | null>(null);
     badgeHoverTasks = signal<TaskItem[]>([]);
 
@@ -63,9 +57,9 @@ export class FixturesComponent implements OnInit {
     selectedAttendee = signal<Attendee | null>(null);
     attendeeTasks = signal<TaskItem[]>([]);
 
-    // FIXED: Make form data reactive signals
-    timeSlotFormData = signal<any>(this.getEmptyTimeSlotForm());
-    attendeeFormData = signal<any>(this.getEmptyAttendeeForm());
+    // Form data
+    timeSlotFormData: any = this.getEmptyTimeSlotForm();
+    attendeeFormData: any = this.getEmptyAttendeeForm();
 
     // Options - Properly typed arrays
     daysOfWeek: DayOfWeek[] = [...DAYS_OF_WEEK];
@@ -92,7 +86,6 @@ export class FixturesComponent implements OnInit {
 
     ngOnInit(): void {
         this.goToCurrentWeek();
-        this.updateAttendeeTaskCounts();
     }
 
     // Template helper methods for signal access
@@ -135,44 +128,6 @@ export class FixturesComponent implements OnInit {
 
     clearSportFilter(): void {
         this.selectedSport.set('');
-        this.updateAttendeeTaskCounts();
-    }
-
-    private updateAttendeeTaskCounts(): void {
-        console.log('Updating attendee task counts with customer-based logic...');
-        const schedule = this.fixturesService.currentWeekSchedule();
-        if (!schedule) return;
-
-        const dashboardData = this.dashboardService.dashboardData();
-        if (!dashboardData?.Tasks) return;
-
-        const selectedSport = this.selectedSport();
-
-        schedule.timeSlots.forEach((timeSlot: TimeSlot) => {
-            timeSlot.attendees.forEach((attendee: Attendee) => {
-                // Count tasks where Customer name matches attendee name
-                const pendingTasks = this.getCustomerPendingTasksForSport(attendee.name, selectedSport);
-                attendee.pendingTasksCount = pendingTasks.length;
-                console.log(`Customer ${attendee.name} has ${pendingTasks.length} pending tasks`);
-            });
-        });
-    }
-
-    // Updated to use Customer field instead of AssignedTo
-    private getCustomerPendingTasksForSport(customerName: string, sport?: string): TaskItem[] {
-        const dashboardData = this.dashboardService.dashboardData();
-        if (!dashboardData?.Tasks) return [];
-
-        return dashboardData.Tasks.filter((task: TaskItem) => {
-            // Match by customer name
-            const isCustomerMatch = task.Customer.toLowerCase() === customerName.toLowerCase();
-            const isPending = task.Status === TaskItemStatus.NotStarted ||
-                task.Status === TaskItemStatus.InProgress ||
-                task.Status === TaskItemStatus.Late;
-            const matchesSport = !sport || task.SportPlayed === sport;
-
-            return isCustomerMatch && isPending && matchesSport;
-        });
     }
 
     // Template helper methods for TaskItem properties
@@ -208,7 +163,7 @@ export class FixturesComponent implements OnInit {
         return task.Updates;
     }
 
-    // Updated hover functionality - only for task badges
+    // Fixed hover functionality - only for task badges
     isTaskBadgeHovered(badgeId: string): boolean {
         return this.hoveredTaskBadge() === badgeId;
     }
@@ -217,7 +172,7 @@ export class FixturesComponent implements OnInit {
         return this.badgeHoverTasks();
     }
 
-    // Updated badge hover methods - specific to task count badge only
+    // Fixed badge hover methods - specific to task count badge only
     onBadgeHover(attendee: Attendee, event: MouseEvent): void {
         event.stopPropagation();
         console.log('Hovering over task badge for customer:', attendee.name);
@@ -279,6 +234,23 @@ export class FixturesComponent implements OnInit {
         const pendingTasks = this.getCustomerPendingTasksForSport(customerName, sport);
         console.log('Found pending tasks:', pendingTasks);
         this.badgeHoverTasks.set(pendingTasks);
+    }
+
+    // Updated to use Customer field instead of AssignedTo field
+    private getCustomerPendingTasksForSport(customerName: string, sport?: string): TaskItem[] {
+        const dashboardData = this.dashboardService.dashboardData();
+        if (!dashboardData?.Tasks) return [];
+
+        return dashboardData.Tasks.filter((task: TaskItem) => {
+            // Match by customer name
+            const isCustomerMatch = task.Customer.toLowerCase() === customerName.toLowerCase();
+            const isPending = task.Status === TaskItemStatus.NotStarted ||
+                task.Status === TaskItemStatus.InProgress ||
+                task.Status === TaskItemStatus.Late;
+            const matchesSport = !sport || task.SportPlayed === sport;
+
+            return isCustomerMatch && isPending && matchesSport;
+        });
     }
 
     getTasksForCustomer(customerName: string): TaskItem[] {
@@ -358,12 +330,13 @@ export class FixturesComponent implements OnInit {
         }
     }
 
+    // Form Data Helpers
     getEmptyTimeSlotForm() {
         return {
             dayOfWeek: '',
             sport: '',
-            startTime: '09:00',  // FIXED: Provide default time instead of empty string
-            endTime: '10:00',    // FIXED: Provide default time instead of empty string
+            startTime: '',
+            endTime: '',
             maxCapacity: 10,
             location: '',
             notes: ''
@@ -377,6 +350,7 @@ export class FixturesComponent implements OnInit {
             phone: ''
         };
     }
+
     // Week Navigation
     goToCurrentWeek(): void {
         const currentWeek = this.fixturesService.getCurrentWeek();
@@ -403,7 +377,7 @@ export class FixturesComponent implements OnInit {
     loadWeeklySchedule(): void {
         this.fixturesService.getWeeklySchedule(this.currentWeekStart()).subscribe({
             next: () => {
-                this.updateAttendeeTaskCounts();
+                console.log('Weekly schedule loaded successfully');
             },
             error: (error) => {
                 console.error('Error loading weekly schedule:', error);
@@ -496,106 +470,50 @@ export class FixturesComponent implements OnInit {
     // Time Slot Management
     openCreateTimeSlotModal(): void {
         this.editingTimeSlot.set(null);
-        this.timeSlotFormData.set(this.getEmptyTimeSlotForm());
+        this.timeSlotFormData = this.getEmptyTimeSlotForm();
         this.showTimeSlotModal.set(true);
-        console.log('Create modal opened with data:', this.timeSlotFormData());
     }
 
-    // FIXED: Enhanced edit time slot method
     editTimeSlot(timeSlot: TimeSlot): void {
-        console.log('Editing time slot:', timeSlot);
         this.editingTimeSlot.set(timeSlot);
-
-        // FIXED: Update the signal with the time slot data and ensure valid defaults
-        this.timeSlotFormData.set({
-            dayOfWeek: timeSlot.dayOfWeek || '',
-            sport: timeSlot.sport || '',
-            startTime: timeSlot.startTime || '09:00',
-            endTime: timeSlot.endTime || '10:00',
+        this.timeSlotFormData = {
+            dayOfWeek: timeSlot.dayOfWeek,
+            sport: timeSlot.sport,
+            startTime: timeSlot.startTime,
+            endTime: timeSlot.endTime,
             maxCapacity: timeSlot.maxCapacity || 10,
             location: timeSlot.location || '',
             notes: timeSlot.notes || ''
-        });
-
+        };
         this.showTimeSlotModal.set(true);
-        console.log('Edit modal opened with data:', this.timeSlotFormData());
     }
 
     closeTimeSlotModal(): void {
         this.showTimeSlotModal.set(false);
         this.editingTimeSlot.set(null);
-        this.timeSlotFormData.set(this.getEmptyTimeSlotForm());
+        this.timeSlotFormData = this.getEmptyTimeSlotForm();
     }
 
     saveTimeSlot(): void {
-        console.log('=== SAVING TIME SLOT ===');
-        const formData = this.timeSlotFormData();
-        console.log('Form data:', formData);
-
-        // Validate required fields
-        if (!formData.dayOfWeek || formData.dayOfWeek.trim() === '') {
-            alert('Please select a day of the week');
-            return;
-        }
-
-        if (!formData.sport || formData.sport.trim() === '') {
-            alert('Please select a sport');
-            return;
-        }
-
-        if (!formData.startTime || formData.startTime.trim() === '') {
-            alert('Please select a start time');
-            return;
-        }
-
-        if (!formData.endTime || formData.endTime.trim() === '') {
-            alert('Please select an end time');
-            return;
-        }
-
-        // Validate time format and logic
-        const startTime = formData.startTime.trim();
-        const endTime = formData.endTime.trim();
-
-        if (!this.isValidTimeFormat(startTime)) {
-            alert('Invalid start time format. Please use HH:MM format (e.g., 08:00)');
-            return;
-        }
-
-        if (!this.isValidTimeFormat(endTime)) {
-            alert('Invalid end time format. Please use HH:MM format (e.g., 09:00)');
-            return;
-        }
-
-        if (startTime >= endTime) {
-            alert('End time must be after start time');
-            return;
-        }
-
         const request: CreateTimeSlotRequest = {
-            dayOfWeek: formData.dayOfWeek.trim(),
-            sport: formData.sport.trim(),
-            startTime: startTime,
-            endTime: endTime,
-            maxCapacity: formData.maxCapacity || 10,
-            location: formData.location?.trim() || '',
-            notes: formData.notes?.trim() || ''
+            dayOfWeek: this.timeSlotFormData.dayOfWeek,
+            sport: this.timeSlotFormData.sport,
+            startTime: this.timeSlotFormData.startTime,
+            endTime: this.timeSlotFormData.endTime,
+            maxCapacity: this.timeSlotFormData.maxCapacity,
+            location: this.timeSlotFormData.location,
+            notes: this.timeSlotFormData.notes
         };
-
-        console.log('Request payload:', request);
 
         if (this.editingTimeSlot()) {
             console.log('Updating time slot:', request);
+            // TODO: Implement update functionality
             this.closeTimeSlotModal();
-            alert('Time slot update functionality coming soon!');
         } else {
             this.fixturesService.createTimeSlot(request).subscribe({
-                next: (response) => {
-                    console.log('✅ Time slot created successfully:', response);
+                next: () => {
+                    console.log('Time slot created successfully');
                     this.closeTimeSlotModal();
-                    alert('Time slot created successfully!');
-                    // Refresh the schedule to show the new time slot
-                    this.loadWeeklySchedule();
                 },
                 error: (error) => {
                     console.error('Error creating time slot:', error);
@@ -605,7 +523,6 @@ export class FixturesComponent implements OnInit {
         }
     }
 
-
     deleteTimeSlot(timeSlotId: string): void {
         if (confirm('Are you sure you want to delete this time slot? All attendee data will be lost.')) {
             this.fixturesService.deleteTimeSlot(timeSlotId).subscribe({
@@ -614,41 +531,34 @@ export class FixturesComponent implements OnInit {
                 },
                 error: (error) => {
                     console.error('Error deleting time slot:', error);
+                    alert('Failed to delete time slot. Please try again.');
                 }
             });
         }
     }
 
-    private isValidTimeFormat(time: string): boolean {
-        if (!time || time.trim() === '') {
-            return false;
-        }
-        const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
-        return timeRegex.test(time.trim());
-    }
-
     // Attendee/Customer Management
     openAddAttendeeModal(timeSlot: TimeSlot): void {
         this.selectedTimeSlot.set(timeSlot);
-        this.attendeeFormData.set(this.getEmptyAttendeeForm());
+        this.attendeeFormData = this.getEmptyAttendeeForm();
         this.showAttendeeModal.set(true);
     }
 
     closeAttendeeModal(): void {
         this.showAttendeeModal.set(false);
         this.selectedTimeSlot.set(null);
-        this.attendeeFormData.set(this.getEmptyAttendeeForm());
+        this.attendeeFormData = this.getEmptyAttendeeForm();
     }
 
     saveAttendee(): void {
         const timeSlot = this.selectedTimeSlot();
         if (!timeSlot) {
             console.error('No time slot selected');
+            alert('No time slot selected. Please try again.');
             return;
         }
 
-        const formData = this.attendeeFormData();
-        const attendeeName = formData.name?.trim();
+        const attendeeName = this.attendeeFormData.name?.trim();
         if (!attendeeName) {
             alert('Attendee name is required');
             return;
@@ -664,26 +574,54 @@ export class FixturesComponent implements OnInit {
             return;
         }
 
+        console.log('=== SAVING ATTENDEE ===');
+        console.log('Selected TimeSlot:', timeSlot);
+        console.log('TimeSlot ID:', timeSlot.id, 'Type:', typeof timeSlot.id);
+
+        // Convert to number if needed
+        const timeSlotId = parseInt(timeSlot.id.toString(), 10);
+
+        if (isNaN(timeSlotId) || timeSlotId <= 0) {
+            console.error('Invalid time slot ID:', timeSlot.id);
+            alert('Invalid time slot ID. Please refresh the page and try again.');
+            return;
+        }
+
+        console.log('Converted TimeSlot ID:', timeSlotId);
+
         const request: AddAttendeeRequest = {
-            timeSlotId: timeSlot.id,
+            timeSlotId: timeSlotId.toString(),
             name: attendeeName,
             contactInfo: {
-                email: formData.email?.trim() || undefined,
-                phone: formData.phone?.trim() || undefined
+                email: this.attendeeFormData.email?.trim() || undefined,
+                phone: this.attendeeFormData.phone?.trim() || undefined
             }
         };
 
-        console.log('Adding attendee:', request);
+        console.log('Final request object:', request);
 
         this.fixturesService.addAttendee(request).subscribe({
-            next: () => {
-                console.log('Attendee added successfully');
+            next: (response) => {
+                console.log('✅ SUCCESS: Attendee added');
+                console.log('Response:', response);
                 this.closeAttendeeModal();
                 alert('Attendee added successfully!');
             },
             error: (error) => {
-                console.error('Error adding attendee:', error);
-                alert('Failed to add attendee. Please try again.');
+                console.error('❌ ERROR adding attendee:', error);
+
+                let errorMessage = 'Failed to add attendee.\n';
+                if (error.error?.message) {
+                    errorMessage += error.error.message;
+                } else if (error.status === 400) {
+                    errorMessage += 'Invalid request data. Please check the form and try again.';
+                } else if (error.status === 500) {
+                    errorMessage += 'Server error occurred. Please try again later.';
+                } else {
+                    errorMessage += 'Unknown error occurred. Please try again.';
+                }
+
+                alert(errorMessage);
             }
         });
     }
@@ -720,13 +658,14 @@ export class FixturesComponent implements OnInit {
         const originalState = targetAttendee.isPresent;
         const originalCheckIn = targetAttendee.checkedInAt;
 
-        // Toggle the state
+        // Toggle the state optimistically
         const newState = !originalState;
         targetAttendee.isPresent = newState;
         targetAttendee.checkedInAt = newState ? new Date() : undefined;
 
         console.log('Updated state:', newState);
 
+        // Create attendance update object
         const update = {
             timeSlotId,
             attendeeId: attendee.id,
@@ -737,6 +676,7 @@ export class FixturesComponent implements OnInit {
         this.fixturesService.updateAttendance(update).subscribe({
             next: () => {
                 console.log('✅ Attendance updated successfully for:', targetAttendee.name);
+                // Success - the optimistic update is already applied
             },
             error: (error) => {
                 console.error('❌ Error updating attendance:', error);
@@ -758,35 +698,9 @@ export class FixturesComponent implements OnInit {
                 },
                 error: (error) => {
                     console.error('Error removing attendee:', error);
+                    alert('Failed to remove attendee. Please try again.');
                 }
             });
         }
-    }
-    updateTimeSlotFormData(field: string, event: Event): void {
-        const target = event.target as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
-        const value = target.value;
-
-        console.log(`Updating ${field} with value:`, value);
-
-        this.timeSlotFormData.update(data => {
-            const newData = { ...data };
-            if (field === 'maxCapacity') {
-                newData[field] = parseInt(value) || 10;
-            } else {
-                newData[field] = value;
-            }
-            console.log('Updated form data:', newData);
-            return newData;
-        });
-    }
-
-    updateAttendeeFormData(field: string, event: Event): void {
-        const target = event.target as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
-        const value = target.value;
-
-        this.attendeeFormData.update(data => ({
-            ...data,
-            [field]: value
-        }));
     }
 }

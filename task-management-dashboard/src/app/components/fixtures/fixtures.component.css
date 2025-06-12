@@ -1,6 +1,5 @@
 /* Complete fixtures.component.css - Fixed popup positioning, sizing, and responsive design */
 
-/* 1. MAIN CONTAINER - FIXED OVERFLOW */
 .fixtures-container {
     max-width: 100%;
     margin: 0 auto;
@@ -192,7 +191,6 @@
     overflow-y: visible;
     /* CRITICAL: Allow vertical overflow for popups */
     padding: 20px 0;
-    /* Prevent the container from pushing the page */
     position: relative;
     scroll-behavior: smooth;
     -webkit-overflow-scrolling: touch;
@@ -224,14 +222,12 @@
     min-height: 600px;
     position: relative;
     z-index: 1;
-    /* Fixed total width to prevent page expansion */
     width: calc(280px * 7 + 24px * 6);
     padding: 0 20px;
     overflow: visible;
     /* CRITICAL: Allow popups to extend beyond grid */
 }
 
-/* 4. DAY COLUMN - FIXED OVERFLOW */
 .day-column {
     background: rgba(255, 255, 255, 0.95);
     -webkit-backdrop-filter: blur(20px);
@@ -244,14 +240,11 @@
     position: relative;
     z-index: 2;
     height: 600px;
-    /* Fixed height instead of min-height */
     width: 280px;
-    /* Fixed width */
     display: flex;
     flex-direction: column;
     transition: all 0.3s ease;
     flex-shrink: 0;
-    /* Prevent shrinking */
 }
 
 .day-column:hover {
@@ -300,7 +293,6 @@
     z-index: 1;
 }
 
-/* 5. TIME SLOTS - FIXED OVERFLOW */
 .time-slots {
     padding: 24px;
     flex: 1;
@@ -310,7 +302,6 @@
     position: relative;
     z-index: 3;
     max-height: calc(600px - 120px);
-    /* Account for header height */
 }
 
 /* Beautiful Time Slot Cards */
@@ -508,7 +499,6 @@
     margin-bottom: 8px;
 }
 
-/* 6. ATTENDEE ITEM - FIXED OVERFLOW */
 .attendee-item {
     display: flex;
     justify-content: space-between;
@@ -550,7 +540,7 @@
     gap: 10px;
 }
 
-/* 7. TASK COUNT BADGE - FIXED Z-INDEX */
+/* Beautiful Task Badge */
 .task-count-badge {
     background: linear-gradient(135deg, #667eea, #764ba2);
     color: white;
@@ -566,7 +556,7 @@
     justify-content: center;
     cursor: pointer;
     position: relative;
-    z-index: 999 !important;
+    z-index: 999;
     transition: all 0.3s ease;
     box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
 }
@@ -644,20 +634,18 @@
     margin-left: -8px;
 }
 
-/* 10. IMPROVED TOOLTIP ANIMATIONS */
 @keyframes tooltipFadeIn {
     from {
         opacity: 0;
-        transform: translate(-50%, -50%) scale(0.9);
+        transform: translateY(-10px);
     }
 
     to {
         opacity: 1;
-        transform: translate(-50%, -50%) scale(1);
+        transform: translateY(0);
     }
 }
 
-/* 11. TOOLTIP CONTENT STYLING */
 .tooltip-header {
     background: linear-gradient(135deg, #667eea, #764ba2);
     color: white;
@@ -667,6 +655,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    border-radius: 16px 16px 0 0;
 }
 
 .tooltip-header small {
@@ -801,6 +790,7 @@
     border-top: 1px solid rgba(102, 126, 234, 0.1);
     padding: 16px 24px;
     text-align: center;
+    border-radius: 0 0 16px 16px;
 }
 
 .tooltip-footer small {
@@ -983,18 +973,18 @@
     color: #ef4444;
 }
 
-/* Beautiful Modal Styles */
+/* FIXED Modal Styles - Centered on screen */
 .modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
     background: rgba(0, 0, 0, 0.6);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    z-index: 10000 !important;
     -webkit-backdrop-filter: blur(8px);
     backdrop-filter: blur(8px);
     animation: modalOverlayFadeIn 0.3s ease-out;
@@ -1019,6 +1009,9 @@
     overflow: hidden;
     box-shadow: 0 25px 80px rgba(0, 0, 0, 0.3);
     animation: modalContentSlideIn 0.4s ease-out;
+    position: relative;
+    z-index: 10001;
+    margin: auto;
 }
 
 @keyframes modalContentSlideIn {
@@ -1071,6 +1064,7 @@
 .modal-body {
     padding: 28px;
     overflow-y: auto;
+    max-height: calc(90vh - 160px);
 }
 
 .form-grid {
@@ -1083,6 +1077,8 @@
 .form-group {
     display: flex;
     flex-direction: column;
+    margin-bottom: 0;
+    box-sizing: border-box;
 }
 
 .form-group.full-width {
@@ -1106,6 +1102,8 @@
     transition: all 0.3s ease;
     background: white;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    box-sizing: border-box;
+    width: 100%;
 }
 
 .form-group input:focus,
@@ -1125,7 +1123,7 @@
     border-top: 2px solid #f1f5f9;
 }
 
-/* 12. MOBILE TOOLTIP FIXES */
+/* Enhanced Responsive Design */
 @media (max-width: 768px) {
     .fixtures-container {
         padding: 16px;
@@ -1150,6 +1148,10 @@
         min-width: 980px;
         overflow-x: auto;
         padding-bottom: 16px;
+    }
+
+    .day-column {
+        width: 140px;
     }
 
     .day-header {
@@ -1246,6 +1248,10 @@
         min-width: 840px;
     }
 
+    .day-column {
+        width: 120px;
+    }
+
     .time-slot-header .sport-badge {
         font-size: 0.7rem;
         padding: 6px 10px;
@@ -1268,15 +1274,21 @@
 
 /* Enhanced stacking context and overflow handling */
 .attendee-item {
-    /* Force all containers to allow overflow */
-    contain: none !important;
+    position: relative;
+    z-index: 3;
     overflow: visible !important;
 }
 
-/* Exception: Only allow scroll on time-slots vertically */
-.time-slots {
-    overflow-y: auto !important;
-    overflow-x: visible !important;
+.attendee-item:has(.tasks-hover-tooltip) {
+    z-index: 99998;
+}
+
+.schedule-grid {
+    overflow: visible !important;
+}
+
+.fixtures-container {
+    overflow: visible !important;
 }
 
 /* Beautiful scrollbar for time slots */

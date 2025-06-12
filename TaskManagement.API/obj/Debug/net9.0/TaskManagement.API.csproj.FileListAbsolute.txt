@@ -1,7 +1,0 @@
-/Users/sara_abraham/Desktop/Coding/Projects/Bryan's Bread/TaskManagement.API/obj/Debug/net9.0/TaskManagement.API.csproj.AssemblyReference.cache
-/Users/sara_abraham/Desktop/Coding/Projects/Bryan's Bread/TaskManagement.API/obj/Debug/net9.0/TaskManagement.API.GeneratedMSBuildEditorConfig.editorconfig
-/Users/sara_abraham/Desktop/Coding/Projects/Bryan's Bread/TaskManagement.API/obj/Debug/net9.0/TaskManagement.API.AssemblyInfoInputs.cache
-/Users/sara_abraham/Desktop/Coding/Projects/Bryan's Bread/TaskManagement.API/obj/Debug/net9.0/TaskManagement.API.AssemblyInfo.cs
-/Users/sara_abraham/Desktop/Coding/Projects/Bryan's Bread/TaskManagement.API/obj/Debug/net9.0/TaskManagement.API.csproj.CoreCompileInputs.cache
-/Users/sara_abraham/Desktop/Coding/Projects/Bryan's Bread/TaskManagement.API/obj/Debug/net9.0/TaskManagement.API.MvcApplicationPartsAssemblyInfo.cs
-/Users/sara_abraham/Desktop/Coding/Projects/Bryan's Bread/TaskManagement.API/obj/Debug/net9.0/TaskManagement.API.MvcApplicationPartsAssemblyInfo.cache
