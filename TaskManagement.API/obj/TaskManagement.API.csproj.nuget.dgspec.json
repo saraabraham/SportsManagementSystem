@@ -60,10 +60,6 @@
               "target": "Package",
               "version": "[8.0.0, )"
             },
-            "Npgsql": {
-              "target": "Package",
-              "version": "[8.0.0, )"
-            },
             "Npgsql.EntityFrameworkCore.PostgreSQL": {
               "target": "Package",
               "version": "[8.0.0, )"

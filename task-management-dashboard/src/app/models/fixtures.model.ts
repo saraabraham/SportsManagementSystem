@@ -1,6 +1,4 @@
 // src/app/models/fixtures.model.ts
-// Updated models with proper database integration
-
 export interface TimeSlot {
     id: string;
     dayOfWeek: DayOfWeek;
@@ -16,12 +14,13 @@ export interface TimeSlot {
 }
 
 export interface Attendee {
-    id: string; // Composite ID for frontend (timeSlotId_attendeeId)
+    id: string;
     name: string;
     isPresent: boolean;
     checkedInAt?: Date;
     contactInfo?: ContactInfo;
     pendingTasksCount?: number;
+
 }
 
 export interface ContactInfo {

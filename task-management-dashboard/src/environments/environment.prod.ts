@@ -1,4 +1,4 @@
-export const environmentProd = {
+export const environment = {
     production: true,
     apiUrl: '/api',
     appName: 'Task Management Dashboard',
