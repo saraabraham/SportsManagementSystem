@@ -1,4 +1,4 @@
-<!-- src/app/components/fixtures/fixtures.component.html - Updated with customer-based logic and proper layout -->
+<!-- src/app/components/fixtures/fixtures.component.html - Fixed with modal tooltip -->
 
 <div class="fixtures-container">
     <!-- Header Section -->
@@ -141,65 +141,12 @@
                                     <div class="attendee-info">
                                         <div class="attendee-name">
                                             {{ attendee.name }}
-                                            <!-- Task badge with hover - only hover trigger -->
+                                            <!-- FIXED: Task badge with simple click handler -->
                                             @if ((attendee.pendingTasksCount || 0) > 0) {
                                             <span class="task-count-badge"
-                                                [attr.title]="selectedSport() ? 'Pending ' + selectedSport() + ' tasks' : 'Pending tasks'"
-                                                (mouseenter)="onBadgeHover(attendee, $event)"
-                                                (mouseleave)="onBadgeLeave()">
+                                                [attr.title]="selectedSport() ? 'View ' + selectedSport() + ' tasks' : 'View pending tasks'"
+                                                (click)="onTaskBadgeClick(attendee, $event)">
                                                 {{ attendee.pendingTasksCount }}
-
-                                                <!-- TOOLTIP - Only shows on badge hover -->
-                                                @if (isTaskBadgeHovered('badge_' + attendee.id) &&
-                                                getHoverTasks().length > 0) {
-                                                <div class="tasks-hover-tooltip">
-                                                    <div class="tooltip-header">
-                                                        @if (selectedSport()) {
-                                                        <span>{{ selectedSport() }} Tasks for {{ attendee.name }}</span>
-                                                        } @else {
-                                                        <span>Pending Tasks for {{ attendee.name }}</span>
-                                                        }
-                                                        <small>({{ getHoverTasks().length }} task{{
-                                                            getHoverTasks().length
-                                                            === 1 ? '' : 's' }})</small>
-                                                    </div>
-
-                                                    <div class="tooltip-tasks">
-                                                        @for (task of getHoverTasks(); track getTaskId(task)) {
-                                                        <div class="tooltip-task-item"
-                                                            [class]="getTaskPriorityClass(task)"
-                                                            (click)="onTaskClick(getTaskId(task), $event)"
-                                                            [attr.title]="'Click to view in Task Management'">
-
-                                                            <div class="task-summary">
-                                                                <span class="task-name">{{ getTaskName(task) }}</span>
-                                                                <span class="task-status"
-                                                                    [class]="getTaskStatusClass(getTaskStatus(task))">
-                                                                    {{ getTaskStatusText(getTaskStatus(task)) }}
-                                                                </span>
-                                                            </div>
-
-                                                            <div class="task-details">
-                                                                <span class="task-customer">{{ getTaskCustomer(task)
-                                                                    }}</span>
-                                                                <span class="task-deadline">Due: {{
-                                                                    formatTaskDate(getTaskDeadline(task)) }}</span>
-                                                                <span class="task-progress">{{
-                                                                    getTaskPercentCompleted(task)
-                                                                    }}% done</span>
-                                                            </div>
-                                                        </div>
-                                                        }
-                                                    </div>
-
-                                                    <div class="tooltip-footer">
-                                                        <small>
-                                                            <i class="fas fa-mouse-pointer"></i>
-                                                            Click any task to view in Task Management
-                                                        </small>
-                                                    </div>
-                                                </div>
-                                                }
                                             </span>
                                             }
                                         </div>
@@ -366,9 +313,9 @@
     </div>
     }
 
-    <!-- Customer Tasks Modal -->
-    @if (showTasksModal()) {
-    <div class="modal-overlay" (click)="closeTasksModal()">
+    <!-- FIXED: Tasks Tooltip Modal -->
+    @if (showTasksTooltip()) {
+    <div class="modal-overlay" (click)="closeTasksTooltip()">
         <div class="modal-content" (click)="$event.stopPropagation()">
             <div class="modal-header">
                 <h3>
@@ -378,36 +325,44 @@
                     Pending Tasks for {{ selectedAttendee()?.name }}
                     }
                 </h3>
-                <button class="close-btn" (click)="closeTasksModal()">×</button>
+                <button class="close-btn" (click)="closeTasksTooltip()">×</button>
             </div>
 
             <div class="modal-body">
                 @if (attendeeTasks().length > 0) {
                 <div class="tasks-list">
                     @for (task of attendeeTasks(); track getTaskId(task)) {
-                    <div class="task-item" [class]="getTaskStatusClass(getTaskStatus(task))">
-                        <div class="task-header">
-                            <h4>{{ getTaskName(task) }}</h4>
-                            <span class="status-badge" [class]="getTaskStatusClass(getTaskStatus(task))">
+                    <div class="task-item" [class]="getTaskPriorityClass(task)" (click)="onTaskClick(getTaskId(task))"
+                        style="cursor: pointer; margin-bottom: 16px; padding: 16px; border-radius: 8px; border-left: 4px solid; transition: all 0.3s ease;">
+                        <div class="task-header"
+                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <h4 style="margin: 0; font-size: 1rem; font-weight: 600;">{{ getTaskName(task) }}</h4>
+                            <span class="task-status" [class]="getTaskStatusClass(getTaskStatus(task))"
+                                style="padding: 4px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase;">
                                 {{ getTaskStatusText(getTaskStatus(task)) }}
                             </span>
                         </div>
-                        <div class="task-details">
-                            <div class="task-info">
+                        <div class="task-details" style="display: flex; flex-direction: column; gap: 8px;">
+                            <div class="task-info"
+                                style="display: flex; gap: 16px; font-size: 0.85rem; color: #64748b;">
                                 <span><i class="fas fa-user"></i> {{ getTaskCustomer(task) }}</span>
                                 <span><i class="fas fa-calendar"></i> Due: {{ formatTaskDate(getTaskDeadline(task))
                                     }}</span>
                                 <span><i class="fas fa-trophy"></i> {{ getTaskSportPlayed(task) }}</span>
                             </div>
-                            <div class="task-progress">
-                                <div class="progress-bar">
-                                    <div class="progress-fill" [style.width.%]="getTaskPercentCompleted(task)"></div>
+                            <div class="task-progress" style="display: flex; align-items: center; gap: 8px;">
+                                <div class="progress-bar"
+                                    style="flex: 1; height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden;">
+                                    <div class="progress-fill" [style.width.%]="getTaskPercentCompleted(task)"
+                                        style="height: 100%; background: linear-gradient(to right, #3498db, #2ecc71); transition: width 0.3s ease;">
+                                    </div>
                                 </div>
-                                <span>{{ getTaskPercentCompleted(task) }}% complete</span>
+                                <span style="font-size: 0.8rem; font-weight: 600; color: #22c55e;">{{
+                                    getTaskPercentCompleted(task) }}% complete</span>
                             </div>
                         </div>
                         @if (getTaskUpdates(task)) {
-                        <div class="task-updates">
+                        <div class="task-updates" style="margin-top: 8px; font-size: 0.85rem; color: #475569;">
                             <strong>Latest Update:</strong> {{ getTaskUpdates(task) }}
                         </div>
                         }
@@ -415,22 +370,29 @@
                     }
                 </div>
                 } @else {
-                <div class="no-tasks">
-                    <i class="fas fa-check-circle"></i>
+                <div class="no-tasks" style="text-align: center; padding: 40px; color: #64748b;">
+                    <i class="fas fa-check-circle" style="font-size: 3rem; color: #22c55e; margin-bottom: 16px;"></i>
                     @if (selectedSport()) {
-                    <h4>No pending {{ selectedSport().toLowerCase() }} tasks!</h4>
-                    <p>{{ selectedAttendee()?.name }} is all caught up with {{ selectedSport().toLowerCase() }} tasks.
-                    </p>
+                    <h4 style="margin: 0 0 8px 0; color: #1e293b;">No pending {{ selectedSport().toLowerCase() }} tasks!
+                    </h4>
+                    <p style="margin: 0;">{{ selectedAttendee()?.name }} is all caught up with {{
+                        selectedSport().toLowerCase() }} tasks.</p>
                     } @else {
-                    <h4>No pending tasks!</h4>
-                    <p>{{ selectedAttendee()?.name }} is all caught up.</p>
+                    <h4 style="margin: 0 0 8px 0; color: #1e293b;">No pending tasks!</h4>
+                    <p style="margin: 0;">{{ selectedAttendee()?.name }} is all caught up.</p>
                     }
                 </div>
                 }
             </div>
 
             <div class="modal-actions">
-                <button class="btn btn-secondary" (click)="closeTasksModal()">Close</button>
+                <button class="btn btn-secondary" (click)="closeTasksTooltip()">Close</button>
+                @if (attendeeTasks().length > 0) {
+                <small style="color: #64748b; font-size: 0.8rem; display: flex; align-items: center; gap: 6px;">
+                    <i class="fas fa-mouse-pointer"></i>
+                    Click any task to view in Task Management
+                </small>
+                }
             </div>
         </div>
     </div>

@@ -1,5 +1,5 @@
 // src/app/components/fixtures/fixtures.component.ts
-// Fixed component with proper toggle functionality and scoped updates
+// Fixed tooltip implementation with proper modal-style display
 
 import { Component, OnInit, inject, signal, computed, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -48,14 +48,11 @@ export class FixturesComponent implements OnInit {
     selectedTimeSlot = signal<TimeSlot | null>(null);
     selectedSport = signal<string>('');
 
-    // Fixed hover functionality - only for task badge
-    hoveredTaskBadge = signal<string | null>(null);
-    badgeHoverTasks = signal<TaskItem[]>([]);
-
-    // Task modal signals
-    showTasksModal = signal(false);
+    // FIXED: Task tooltip signals - using modal approach
+    showTasksTooltip = signal(false);
     selectedAttendee = signal<Attendee | null>(null);
     attendeeTasks = signal<TaskItem[]>([]);
+    tooltipPosition = signal<{ x: number, y: number }>({ x: 0, y: 0 });
 
     // Form data
     timeSlotFormData: any = this.getEmptyTimeSlotForm();
@@ -122,7 +119,6 @@ export class FixturesComponent implements OnInit {
 
     // Sport filter methods
     onSportFilterChange(): void {
-        // Sport filter change will automatically trigger reactive updates
         console.log('Sport filter changed to:', this.selectedSport());
     }
 
@@ -163,43 +159,41 @@ export class FixturesComponent implements OnInit {
         return task.Updates;
     }
 
-    // Fixed hover functionality - only for task badges
-    isTaskBadgeHovered(badgeId: string): boolean {
-        return this.hoveredTaskBadge() === badgeId;
-    }
-
-    getHoverTasks(): TaskItem[] {
-        return this.badgeHoverTasks();
-    }
-
-    // Fixed badge hover methods - specific to task count badge only
-    onBadgeHover(attendee: Attendee, event: MouseEvent): void {
+    // FIXED: Task badge click handler - shows modal-style tooltip
+    onTaskBadgeClick(attendee: Attendee, event: MouseEvent): void {
         event.stopPropagation();
-        console.log('Hovering over task badge for customer:', attendee.name);
+        console.log('Task badge clicked for customer:', attendee.name);
 
-        const badgeId = `badge_${attendee.id}`;
-        this.hoveredTaskBadge.set(badgeId);
-        this.loadCustomerTasksForHover(attendee.name, this.selectedSport());
+        // Load tasks for this customer
+        const tasks = this.getCustomerPendingTasks(attendee.name, this.selectedSport());
+
+        // Set tooltip data
+        this.selectedAttendee.set(attendee);
+        this.attendeeTasks.set(tasks);
+
+        // Show tooltip modal
+        this.showTasksTooltip.set(true);
+
+        console.log('Showing tasks tooltip with', tasks.length, 'tasks');
     }
 
-    onBadgeLeave(): void {
-        console.log('Leaving task badge hover');
-        this.hoveredTaskBadge.set(null);
-        this.badgeHoverTasks.set([]);
+    // Close tooltip modal
+    closeTasksTooltip(): void {
+        this.showTasksTooltip.set(false);
+        this.selectedAttendee.set(null);
+        this.attendeeTasks.set([]);
     }
 
-    // Updated to navigate with customer name for filtering
-    onTaskClick(taskId: number, event: Event): void {
-        event.stopPropagation();
+    // Navigate to specific task with customer filter
+    onTaskClick(taskId: number): void {
         console.log('Task clicked:', taskId);
 
-        // Get the customer name from the hovered badge
-        const customerName = this.getCustomerNameFromHoveredBadge();
+        const customerName = this.selectedAttendee()?.name;
 
-        // Close any open tooltips
-        this.onBadgeLeave();
+        // Close tooltip
+        this.closeTasksTooltip();
 
-        // Emit events to navigate to task management with customer filter
+        // Navigate with customer filter
         if (customerName) {
             this.navigateToTaskWithCustomer.emit({ taskId, customerName });
         } else {
@@ -208,36 +202,8 @@ export class FixturesComponent implements OnInit {
         this.switchToTaskManagement.emit();
     }
 
-    private getCustomerNameFromHoveredBadge(): string | null {
-        const hoveredBadgeId = this.hoveredTaskBadge();
-        if (!hoveredBadgeId) return null;
-
-        // Extract attendee ID from badge ID
-        const attendeeId = hoveredBadgeId.replace('badge_', '');
-
-        // Find the attendee in current schedule
-        const schedule = this.fixturesService.currentWeekSchedule();
-        if (!schedule) return null;
-
-        for (const timeSlot of schedule.timeSlots) {
-            const attendee = timeSlot.attendees.find(a => a.id === attendeeId);
-            if (attendee) {
-                return attendee.name;
-            }
-        }
-
-        return null;
-    }
-
-    loadCustomerTasksForHover(customerName: string, sport?: string): void {
-        console.log('Loading tasks for hover - Customer:', customerName, 'sport:', sport);
-        const pendingTasks = this.getCustomerPendingTasksForSport(customerName, sport);
-        console.log('Found pending tasks:', pendingTasks);
-        this.badgeHoverTasks.set(pendingTasks);
-    }
-
-    // Updated to use Customer field instead of AssignedTo field
-    private getCustomerPendingTasksForSport(customerName: string, sport?: string): TaskItem[] {
+    // Get customer pending tasks
+    private getCustomerPendingTasks(customerName: string, sport?: string): TaskItem[] {
         const dashboardData = this.dashboardService.dashboardData();
         if (!dashboardData?.Tasks) return [];
 
@@ -251,10 +217,6 @@ export class FixturesComponent implements OnInit {
 
             return isCustomerMatch && isPending && matchesSport;
         });
-    }
-
-    getTasksForCustomer(customerName: string): TaskItem[] {
-        return this.getCustomerPendingTasksForSport(customerName, this.selectedSport());
     }
 
     getTaskPriorityClass(task: TaskItem): string {
@@ -276,20 +238,6 @@ export class FixturesComponent implements OnInit {
 
         const diffTime = deadlineDate.getTime() - today.getTime();
         return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    }
-
-    // Task modal methods
-    openTasksModal(attendee: Attendee): void {
-        this.selectedAttendee.set(attendee);
-        const tasks = this.getTasksForCustomer(attendee.name);
-        this.attendeeTasks.set(tasks);
-        this.showTasksModal.set(true);
-    }
-
-    closeTasksModal(): void {
-        this.showTasksModal.set(false);
-        this.selectedAttendee.set(null);
-        this.attendeeTasks.set([]);
     }
 
     getTaskStatusClass(status: TaskItemStatus): string {
@@ -625,6 +573,7 @@ export class FixturesComponent implements OnInit {
             }
         });
     }
+
     // FIXED: Proper toggle functionality with unique attendee identification
     toggleAttendance(timeSlotId: string, attendee: Attendee, event: Event): void {
         event.stopPropagation();

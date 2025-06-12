@@ -1,4 +1,4 @@
-/* Complete fixtures.component.css - Fixed popup positioning, sizing, and responsive design */
+/* Complete fixtures.component.css - Fixed modal tooltip styling */
 
 .fixtures-container {
     max-width: 100%;
@@ -9,7 +9,6 @@
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
     position: relative;
     overflow: visible;
-    /* CRITICAL: Allow popups to extend beyond container */
     width: 100%;
     box-sizing: border-box;
 }
@@ -157,39 +156,11 @@
     gap: 10px;
 }
 
-/* Customer Filter Display */
-.active-customer-filter {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    background: rgba(102, 126, 234, 0.1);
-    padding: 12px 16px;
-    border-radius: 8px;
-    color: #667eea;
-    font-weight: 600;
-}
-
-.btn-clear-customer {
-    background: none;
-    border: none;
-    color: #667eea;
-    cursor: pointer;
-    padding: 4px;
-    border-radius: 4px;
-    transition: all 0.2s ease;
-}
-
-.btn-clear-customer:hover {
-    background: rgba(102, 126, 234, 0.1);
-    color: #5b21b6;
-}
-
-/* Schedule Grid Container - FIXED TO PREVENT CLIPPING */
+/* Schedule Grid Container */
 .schedule-wrapper {
     width: 100%;
     overflow-x: auto;
     overflow-y: visible;
-    /* CRITICAL: Allow vertical overflow for popups */
     padding: 20px 0;
     position: relative;
     scroll-behavior: smooth;
@@ -215,7 +186,7 @@
     background: linear-gradient(135deg, #5b21b6, #7c3aed);
 }
 
-/* Schedule Grid - FIXED WIDTH GRID WITH OVERFLOW HANDLING */
+/* Schedule Grid */
 .schedule-grid {
     display: flex;
     gap: 24px;
@@ -225,7 +196,6 @@
     width: calc(280px * 7 + 24px * 6);
     padding: 0 20px;
     overflow: visible;
-    /* CRITICAL: Allow popups to extend beyond grid */
 }
 
 .day-column {
@@ -234,7 +204,6 @@
     backdrop-filter: blur(20px);
     border-radius: 16px;
     overflow: visible;
-    /* CRITICAL: Allow popups to extend beyond column */
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
     border: 1px solid rgba(255, 255, 255, 0.2);
     position: relative;
@@ -298,7 +267,6 @@
     flex: 1;
     overflow-y: auto;
     overflow-x: visible;
-    /* CRITICAL: Allow horizontal overflow for popups */
     position: relative;
     z-index: 3;
     max-height: calc(600px - 120px);
@@ -512,7 +480,6 @@
     z-index: 4;
     border: 1px solid rgba(102, 126, 234, 0.1);
     overflow: visible;
-    /* CRITICAL: Allow popup overflow */
 }
 
 .attendee-item.present {
@@ -540,7 +507,7 @@
     gap: 10px;
 }
 
-/* Beautiful Task Badge */
+/* FIXED: Beautiful Task Badge - Now uses click instead of hover */
 .task-count-badge {
     background: linear-gradient(135deg, #667eea, #764ba2);
     color: white;
@@ -602,209 +569,28 @@
     transform: scale(1.1);
 }
 
-/* FIXED POPUP POSITIONING - Matches day column width exactly */
-.tasks-hover-tooltip {
-    position: absolute !important;
-    left: 0 !important;
-    /* Align with day column left edge */
-    top: 100% !important;
-    /* Position below the attendee item */
-    transform: none !important;
-    z-index: 99999 !important;
-    background: white;
-    border: none;
-    border-radius: 16px;
-    box-shadow: 0 25px 80px rgba(0, 0, 0, 0.4);
-    width: 280px !important;
-    /* Match day column width exactly */
-    max-height: 400px;
-    overflow-y: auto;
-    animation: tooltipFadeIn 0.3s ease-out;
-    pointer-events: auto;
-    -webkit-backdrop-filter: blur(20px);
-    backdrop-filter: blur(20px);
-    margin-top: 8px;
-    /* Small gap below attendee item */
-}
-
-/* If popup would go off-screen to the right, position it to the left */
-.day-column:nth-last-child(-n+2) .tasks-hover-tooltip {
-    left: -280px !important;
-    /* Position to the left of day column */
-    margin-left: -8px;
-}
-
-@keyframes tooltipFadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(-10px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-.tooltip-header {
-    background: linear-gradient(135deg, #667eea, #764ba2);
-    color: white;
-    padding: 20px 24px;
-    font-weight: 700;
-    font-size: 1rem;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-radius: 16px 16px 0 0;
-}
-
-.tooltip-header small {
-    opacity: 0.9;
-    font-weight: 500;
-    font-size: 0.8rem;
-}
-
-.tooltip-tasks {
-    max-height: 300px;
-    overflow-y: auto;
-    padding: 16px;
-}
-
-.tooltip-task-item {
-    padding: 16px;
-    margin-bottom: 8px;
-    border-radius: 12px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    border-left: 4px solid transparent;
-    background: rgba(102, 126, 234, 0.04);
-    font-size: 0.9rem;
-    border: 1px solid rgba(102, 126, 234, 0.08);
-}
-
-.tooltip-task-item:hover {
-    background: rgba(102, 126, 234, 0.08);
-    transform: translateX(4px);
-    box-shadow: 0 4px 16px rgba(102, 126, 234, 0.15);
-}
-
-.tooltip-task-item:last-child {
-    margin-bottom: 0;
-}
-
-.tooltip-task-item.task-priority-overdue {
-    border-left-color: #ef4444;
-    background: rgba(239, 68, 68, 0.06);
-}
-
-.tooltip-task-item.task-priority-urgent {
-    border-left-color: #f97316;
-    background: rgba(249, 115, 22, 0.06);
-}
-
-.tooltip-task-item.task-priority-high {
-    border-left-color: #eab308;
-    background: rgba(234, 179, 8, 0.06);
-}
-
-.tooltip-task-item.task-priority-medium {
-    border-left-color: #3b82f6;
-    background: rgba(59, 130, 246, 0.06);
-}
-
-.tooltip-task-item.task-priority-low {
-    border-left-color: #22c55e;
-    background: rgba(34, 197, 94, 0.06);
-}
-
-.task-summary {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 8px;
-}
-
-.task-name {
-    font-weight: 700;
-    color: #1e293b;
-    font-size: 0.9rem;
-    flex: 1;
-    margin-right: 12px;
-}
-
-.task-status {
-    padding: 4px 8px;
-    border-radius: 12px;
-    font-size: 0.7rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.task-status.not-started {
-    background: #f1f5f9;
-    color: #64748b;
-}
-
-.task-status.in-progress {
-    background: rgba(59, 130, 246, 0.1);
-    color: #3b82f6;
-}
-
-.task-status.late {
-    background: rgba(239, 68, 68, 0.1);
-    color: #ef4444;
-}
-
-.task-status.completed {
-    background: rgba(34, 197, 94, 0.1);
-    color: #22c55e;
-}
-
-.task-details {
-    display: flex;
-    justify-content: space-between;
-    font-size: 0.8rem;
-    color: #64748b;
-    gap: 12px;
-}
-
-.task-customer {
-    font-weight: 600;
-    color: #475569;
-    flex: 1;
-}
-
-.task-deadline {
-    color: #ef4444;
-    font-weight: 600;
-}
-
-.task-progress {
-    color: #22c55e;
-    font-weight: 600;
-}
-
-.tooltip-footer {
-    background: rgba(102, 126, 234, 0.05);
-    border-top: 1px solid rgba(102, 126, 234, 0.1);
-    padding: 16px 24px;
+.no-attendees,
+.no-slots {
     text-align: center;
-    border-radius: 0 0 16px 16px;
-}
-
-.tooltip-footer small {
+    padding: 40px 20px;
     color: #64748b;
-    font-size: 0.8rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    font-weight: 500;
+    font-style: italic;
+    background: rgba(100, 116, 139, 0.05);
+    border-radius: 12px;
+    border: 2px dashed rgba(100, 116, 139, 0.2);
 }
 
-.tooltip-footer i {
-    color: #667eea;
+.no-attendees i,
+.no-slots i {
+    font-size: 2.5rem;
+    margin-bottom: 16px;
+    display: block;
+    color: #94a3b8;
+}
+
+.no-slots span {
+    font-size: 0.95rem;
+    font-weight: 600;
 }
 
 /* Beautiful Loading States */
@@ -837,30 +623,6 @@
     100% {
         transform: rotate(360deg);
     }
-}
-
-.no-attendees,
-.no-slots {
-    text-align: center;
-    padding: 40px 20px;
-    color: #64748b;
-    font-style: italic;
-    background: rgba(100, 116, 139, 0.05);
-    border-radius: 12px;
-    border: 2px dashed rgba(100, 116, 139, 0.2);
-}
-
-.no-attendees i,
-.no-slots i {
-    font-size: 2.5rem;
-    margin-bottom: 16px;
-    display: block;
-    color: #94a3b8;
-}
-
-.no-slots span {
-    font-size: 0.95rem;
-    font-weight: 600;
 }
 
 /* Beautiful Buttons */
@@ -973,7 +735,7 @@
     color: #ef4444;
 }
 
-/* FIXED Modal Styles - Centered on screen */
+/* FIXED Modal Styles - Proper centered modals */
 .modal-overlay {
     position: fixed !important;
     top: 0 !important;
@@ -1065,6 +827,167 @@
     padding: 28px;
     overflow-y: auto;
     max-height: calc(90vh - 160px);
+}
+
+/* FIXED: Tasks List Styling */
+.tasks-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.task-item {
+    padding: 16px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border-left: 4px solid transparent;
+    background: rgba(102, 126, 234, 0.04);
+    font-size: 0.9rem;
+    border: 1px solid rgba(102, 126, 234, 0.08);
+}
+
+.task-item:hover {
+    background: rgba(102, 126, 234, 0.08);
+    transform: translateX(4px);
+    box-shadow: 0 4px 16px rgba(102, 126, 234, 0.15);
+}
+
+.task-item.task-priority-overdue {
+    border-left-color: #ef4444;
+    background: rgba(239, 68, 68, 0.06);
+}
+
+.task-item.task-priority-urgent {
+    border-left-color: #f97316;
+    background: rgba(249, 115, 22, 0.06);
+}
+
+.task-item.task-priority-high {
+    border-left-color: #eab308;
+    background: rgba(234, 179, 8, 0.06);
+}
+
+.task-item.task-priority-medium {
+    border-left-color: #3b82f6;
+    background: rgba(59, 130, 246, 0.06);
+}
+
+.task-item.task-priority-low {
+    border-left-color: #22c55e;
+    background: rgba(34, 197, 94, 0.06);
+}
+
+.task-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.task-header h4 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.task-status {
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.task-status.not-started {
+    background: #f1f5f9;
+    color: #64748b;
+}
+
+.task-status.in-progress {
+    background: rgba(59, 130, 246, 0.1);
+    color: #3b82f6;
+}
+
+.task-status.late {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+}
+
+.task-status.completed {
+    background: rgba(34, 197, 94, 0.1);
+    color: #22c55e;
+}
+
+.task-status.on-hold {
+    background: rgba(245, 158, 11, 0.1);
+    color: #f59e0b;
+}
+
+.task-status.cancelled {
+    background: rgba(107, 114, 126, 0.1);
+    color: #6b7280;
+}
+
+.task-details {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.task-info {
+    display: flex;
+    gap: 16px;
+    font-size: 0.85rem;
+    color: #64748b;
+}
+
+.task-progress {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.progress-bar {
+    flex: 1;
+    height: 8px;
+    background: #e2e8f0;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(to right, #3498db, #2ecc71);
+    transition: width 0.3s ease;
+}
+
+.task-updates {
+    margin-top: 8px;
+    font-size: 0.85rem;
+    color: #475569;
+}
+
+.no-tasks {
+    text-align: center;
+    padding: 40px;
+    color: #64748b;
+}
+
+.no-tasks i {
+    font-size: 3rem;
+    color: #22c55e;
+    margin-bottom: 16px;
+}
+
+.no-tasks h4 {
+    margin: 0 0 8px 0;
+    color: #1e293b;
+}
+
+.no-tasks p {
+    margin: 0;
 }
 
 .form-grid {
@@ -1205,29 +1128,6 @@
         padding: 14px 18px;
     }
 
-    /* Mobile popup positioning */
-    .tasks-hover-tooltip {
-        position: fixed !important;
-        left: 50% !important;
-        top: 50% !important;
-        transform: translate(-50%, -50%) !important;
-        width: 95vw !important;
-        max-width: 380px !important;
-        z-index: 99999 !important;
-    }
-
-    /* Add backdrop overlay for mobile */
-    .tasks-hover-tooltip::before {
-        content: '';
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(0, 0, 0, 0.3);
-        z-index: -1;
-    }
-
     /* Mobile modal adjustments */
     .modal-content {
         width: 95%;
@@ -1272,25 +1172,6 @@
     }
 }
 
-/* Enhanced stacking context and overflow handling */
-.attendee-item {
-    position: relative;
-    z-index: 3;
-    overflow: visible !important;
-}
-
-.attendee-item:has(.tasks-hover-tooltip) {
-    z-index: 99998;
-}
-
-.schedule-grid {
-    overflow: visible !important;
-}
-
-.fixtures-container {
-    overflow: visible !important;
-}
-
 /* Beautiful scrollbar for time slots */
 .time-slots::-webkit-scrollbar {
     width: 6px;
@@ -1308,46 +1189,6 @@
 
 .time-slots::-webkit-scrollbar-thumb:hover {
     background: linear-gradient(135deg, #5b21b6, #7c3aed);
-}
-
-/* Enhanced z-index management for proper layering */
-.fixtures-container * {
-    position: relative;
-}
-
-.fixtures-container .tasks-hover-tooltip {
-    z-index: 99999 !important;
-    position: absolute !important;
-}
-
-/* Additional fallback positioning */
-.attendee-item.hovered {
-    z-index: 99998;
-}
-
-/* Ensure all interactive elements are properly positioned */
-.task-count-badge {
-    z-index: 999;
-}
-
-.attendance-toggle {
-    z-index: 10;
-}
-
-.btn-icon,
-.btn-icon-small {
-    z-index: 10;
-}
-
-/* Status and priority specific styles */
-.task-status.on-hold {
-    background: rgba(245, 158, 11, 0.1);
-    color: #f59e0b;
-}
-
-.task-status.cancelled {
-    background: rgba(107, 114, 126, 0.1);
-    color: #6b7280;
 }
 
 /* Enhanced hover effects */
@@ -1369,27 +1210,4 @@
 .error-message p {
     color: #64748b;
     margin-bottom: 20px;
-}
-
-/* Final responsive adjustments */
-@media (min-width: 1200px) {
-    .fixtures-container {
-        max-width: 1400px;
-    }
-
-    .schedule-grid {
-        width: calc(300px * 7 + 24px * 6);
-    }
-
-    .day-column {
-        width: 300px;
-    }
-
-    .tasks-hover-tooltip {
-        width: 300px !important;
-    }
-
-    .day-column:nth-last-child(-n+2) .tasks-hover-tooltip {
-        left: -300px !important;
-    }
 }
