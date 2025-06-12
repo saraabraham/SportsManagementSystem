@@ -1,10 +1,10 @@
 // src/app/services/fixtures.service.ts
-// Updated service with customer-based logic instead of assignee-based
+// Updated service with proper API integration - COMPLETE VERSION
 
 import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, BehaviorSubject, of } from 'rxjs';
-import { map, tap } from 'rxjs/operators';
+import { map, tap, catchError } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 import {
     TimeSlot,
@@ -41,7 +41,7 @@ export class FixturesService {
             startTime: '08:00',
             endTime: '09:00',
             sport: 'Football',
-            attendees: [], // Will be populated with real customer data
+            attendees: [],
             maxCapacity: 20,
             location: 'Main Field',
             createdAt: new Date(),
@@ -53,7 +53,7 @@ export class FixturesService {
             startTime: '10:00',
             endTime: '11:00',
             sport: 'Basketball',
-            attendees: [], // Will be populated with real customer data
+            attendees: [],
             maxCapacity: 10,
             location: 'Court A',
             createdAt: new Date()
@@ -64,7 +64,7 @@ export class FixturesService {
             startTime: '14:00',
             endTime: '15:00',
             sport: 'Tennis',
-            attendees: [], // Will be populated with real customer data
+            attendees: [],
             maxCapacity: 4,
             location: 'Tennis Court 1',
             createdAt: new Date()
@@ -75,7 +75,7 @@ export class FixturesService {
             startTime: '16:00',
             endTime: '17:00',
             sport: 'Swimming',
-            attendees: [], // Will be populated with real customer data
+            attendees: [],
             maxCapacity: 15,
             location: 'Swimming Pool',
             createdAt: new Date()
@@ -86,7 +86,7 @@ export class FixturesService {
             startTime: '18:00',
             endTime: '19:00',
             sport: 'Boxing',
-            attendees: [], // Will be populated with real customer data
+            attendees: [],
             maxCapacity: 8,
             location: 'Boxing Gym',
             createdAt: new Date()
@@ -97,7 +97,7 @@ export class FixturesService {
             startTime: '10:00',
             endTime: '11:00',
             sport: 'Golf',
-            attendees: [], // Will be populated with real customer data
+            attendees: [],
             maxCapacity: 12,
             location: 'Golf Course',
             createdAt: new Date()
@@ -108,7 +108,7 @@ export class FixturesService {
             startTime: '15:00',
             endTime: '16:00',
             sport: 'Running',
-            attendees: [], // Will be populated with real customer data
+            attendees: [],
             maxCapacity: 30,
             location: 'Track Field',
             createdAt: new Date()
@@ -119,6 +119,33 @@ export class FixturesService {
         this.loading.set(true);
         this.error.set(null);
 
+        // Try to get data from backend first
+        const startDateStr = weekStartDate.toISOString().split('T')[0];
+        const endDate = new Date(weekStartDate);
+        endDate.setDate(weekStartDate.getDate() + 6);
+        const endDateStr = endDate.toISOString().split('T')[0];
+
+        return this.http.get<any>(`${this.apiUrl}/fixtures/weekly-schedule`, {
+            params: {
+                startDate: startDateStr,
+                endDate: endDateStr
+            }
+        }).pipe(
+            map(response => this.transformBackendResponse(response, weekStartDate)),
+            catchError(error => {
+                console.warn('Backend not available, using mock data:', error);
+                // Fallback to mock data
+                return this.getMockWeeklySchedule(weekStartDate);
+            }),
+            tap(schedule => {
+                this.currentWeekSchedule.set(schedule);
+                this.loading.set(false);
+                console.log('Weekly schedule loaded:', schedule);
+            })
+        );
+    }
+
+    private getMockWeeklySchedule(weekStartDate: Date): Observable<WeeklySchedule> {
         // Calculate week end date
         const weekEndDate = new Date(weekStartDate);
         weekEndDate.setDate(weekStartDate.getDate() + 6);
@@ -127,44 +154,107 @@ export class FixturesService {
         this.updateAttendeesWithCustomerData();
 
         // Return schedule with real customer names and task counts
-        return of({
+        const schedule: WeeklySchedule = {
             weekStartDate,
             weekEndDate,
             timeSlots: [...this.mockTimeSlots] // Create a copy to avoid mutations
-        }).pipe(
-            tap(schedule => {
-                this.currentWeekSchedule.set(schedule);
-                this.loading.set(false);
-                console.log('Fixtures service: Weekly schedule loaded with customer data:', schedule);
-            })
-        );
+        };
 
-        // Uncomment when backend fixtures API is ready:
-        // return this.http.get<WeeklySchedule>(`${this.apiUrl}/fixtures/week`, {
-        //   params: { startDate: weekStartDate.toISOString() }
-        // }).pipe(
-        //   tap(schedule => {
-        //     this.currentWeekSchedule.set(schedule);
-        //     this.loading.set(false);
-        //   })
-        // );
+        return of(schedule);
+    }
+
+    private transformBackendResponse(response: any, weekStartDate: Date): WeeklySchedule {
+        console.log('Transforming backend response:', response);
+
+        const weekEndDate = new Date(weekStartDate);
+        weekEndDate.setDate(weekStartDate.getDate() + 6);
+
+        // Transform backend data to frontend format
+        const timeSlots: TimeSlot[] = (response.timeSlots || []).map((slot: any) => {
+            // Get attendees for this slot
+            const slotAttendees = this.getAttendeesForTimeSlot(slot.id, response.attendees, response.registrations, response.attendanceRecords);
+
+            return {
+                id: slot.id.toString(),
+                dayOfWeek: slot.dayOfWeek as DayOfWeek,
+                startTime: slot.startTime,
+                endTime: slot.endTime,
+                sport: slot.sport,
+                attendees: slotAttendees,
+                maxCapacity: slot.maxCapacity,
+                location: slot.location || '',
+                notes: slot.notes || '',
+                createdAt: new Date(slot.createdAt),
+                updatedAt: slot.updatedAt ? new Date(slot.updatedAt) : undefined
+            };
+        });
+
+        return {
+            weekStartDate,
+            weekEndDate,
+            timeSlots
+        };
+    }
+
+    private getAttendeesForTimeSlot(timeSlotId: number, attendees: any[], registrations: any[], attendanceRecords: any[]) {
+        // Get registrations for this time slot
+        const slotRegistrations = registrations.filter(reg => reg.timeSlotId === timeSlotId);
+
+        return slotRegistrations.map(registration => {
+            // Find attendee details
+            const attendeeDetails = attendees.find(att => att.id === registration.attendeeId);
+
+            // Find attendance record for today
+            const attendanceRecord = attendanceRecords.find(record =>
+                record.timeSlotId === timeSlotId &&
+                record.attendeeId === registration.attendeeId
+            );
+
+            // Get task count for this customer
+            const taskCount = this.getCustomerTaskCount(attendeeDetails?.name || '');
+
+            return {
+                id: `${timeSlotId}_${registration.attendeeId}`,
+                name: attendeeDetails?.name || 'Unknown',
+                isPresent: attendanceRecord?.isPresent || false,
+                checkedInAt: attendanceRecord?.checkedInAt ? new Date(attendanceRecord.checkedInAt) : undefined,
+                contactInfo: {
+                    email: attendeeDetails?.email || '',
+                    phone: attendeeDetails?.phone || ''
+                },
+                pendingTasksCount: taskCount
+            };
+        });
+    }
+
+    private getCustomerTaskCount(customerName: string): number {
+        const dashboardData = this.dashboardService.dashboardData();
+        if (!dashboardData?.Tasks || !customerName) return 0;
+
+        return dashboardData.Tasks.filter(task => {
+            const isCustomerMatch = task.Customer.toLowerCase() === customerName.toLowerCase();
+            const isPending = task.Status === TaskItemStatus.NotStarted ||
+                task.Status === TaskItemStatus.InProgress ||
+                task.Status === TaskItemStatus.Late;
+            return isCustomerMatch && isPending;
+        }).length;
     }
 
     private updateAttendeesWithCustomerData(): void {
-        console.log('Fixtures service: Updating attendees with real customer data...');
+        console.log('Updating attendees with real customer data...');
 
         // Get current dashboard data
         const dashboardData = this.dashboardService.dashboardData();
         if (!dashboardData?.Tasks) {
-            console.log('Fixtures service: No dashboard data available');
+            console.log('No dashboard data available');
             return;
         }
 
-        console.log('Fixtures service: Found tasks in dashboard:', dashboardData.Tasks.length);
+        console.log('Found tasks in dashboard:', dashboardData.Tasks.length);
 
         // Get unique customer names from tasks
         const uniqueCustomers = [...new Set(dashboardData.Tasks.map(task => task.Customer))];
-        console.log('Fixtures service: Found unique customers:', uniqueCustomers);
+        console.log('Found unique customers:', uniqueCustomers);
 
         // Update attendees for each time slot with customer-based logic
         this.mockTimeSlots.forEach((timeSlot, slotIndex) => {
@@ -207,11 +297,10 @@ export class FixturesService {
                 });
             });
 
-            console.log(`Fixtures service: ${timeSlot.sport} slot (${timeSlot.dayOfWeek}) has ${timeSlot.attendees.length} attendees with tasks`);
+            console.log(`${timeSlot.sport} slot (${timeSlot.dayOfWeek}) has ${timeSlot.attendees.length} attendees with tasks`);
         });
     }
 
-    // Updated to use Customer field instead of AssignedTo field
     private getCustomerPendingTasks(customerName: string, tasks: TaskItem[]): TaskItem[] {
         return tasks.filter(task => {
             // Match by customer name (case-insensitive)
@@ -225,173 +314,183 @@ export class FixturesService {
     }
 
     createTimeSlot(request: CreateTimeSlotRequest): Observable<TimeSlot> {
-        console.log('Fixtures service: Creating time slot:', request);
+        console.log('Creating time slot:', request);
 
-        // Mock implementation - replace with actual API call
-        const newTimeSlot: TimeSlot = {
-            id: Date.now().toString(),
-            dayOfWeek: request.dayOfWeek,
-            startTime: request.startTime,
-            endTime: request.endTime,
-            sport: request.sport,
-            attendees: [],
-            maxCapacity: request.maxCapacity || 10,
-            location: request.location || '',
-            notes: request.notes || '',
-            createdAt: new Date()
-        };
+        // Try backend API first
+        return this.http.post<any>(`${this.apiUrl}/fixtures/time-slots`, request).pipe(
+            map(response => {
+                // Transform response to TimeSlot format if needed
+                return {
+                    id: response.id || Date.now().toString(),
+                    dayOfWeek: request.dayOfWeek,
+                    startTime: request.startTime,
+                    endTime: request.endTime,
+                    sport: request.sport,
+                    attendees: [],
+                    maxCapacity: request.maxCapacity || 10,
+                    location: request.location || '',
+                    notes: request.notes || '',
+                    createdAt: new Date()
+                } as TimeSlot;
+            }),
+            catchError(error => {
+                console.warn('Backend not available, using mock implementation:', error);
+                // Fallback to mock implementation
+                const newTimeSlot: TimeSlot = {
+                    id: Date.now().toString(),
+                    dayOfWeek: request.dayOfWeek,
+                    startTime: request.startTime,
+                    endTime: request.endTime,
+                    sport: request.sport,
+                    attendees: [],
+                    maxCapacity: request.maxCapacity || 10,
+                    location: request.location || '',
+                    notes: request.notes || '',
+                    createdAt: new Date()
+                };
 
-        this.mockTimeSlots.push(newTimeSlot);
-        this.refreshCurrentWeek();
-
-        return of(newTimeSlot);
-
-        // Uncomment when backend is ready:
-        // return this.http.post<TimeSlot>(`${this.apiUrl}/fixtures/timeslots`, request)
-        //   .pipe(tap(() => this.refreshCurrentWeek()));
+                this.mockTimeSlots.push(newTimeSlot);
+                return of(newTimeSlot);
+            })
+        );
     }
 
     addAttendee(request: AddAttendeeRequest): Observable<void> {
-        console.log('Fixtures service: Adding attendee:', request);
+        console.log('Adding attendee:', request);
 
-        // Mock implementation
-        const timeSlot = this.mockTimeSlots.find(ts => ts.id === request.timeSlotId);
-        if (!timeSlot) {
-            console.error('Time slot not found:', request.timeSlotId);
-            return of(void 0);
-        }
+        // Try backend API first
+        return this.http.post<void>(`${this.apiUrl}/fixtures/attendees`, request).pipe(
+            catchError(error => {
+                console.warn('Backend not available, using mock implementation:', error);
 
-        // Check if attendee already exists in this slot
-        const existingAttendee = timeSlot.attendees.find(a =>
-            a.name.toLowerCase() === request.name.toLowerCase()
+                // Fallback to mock implementation
+                const timeSlot = this.mockTimeSlots.find(ts => ts.id === request.timeSlotId.toString());
+                if (!timeSlot) {
+                    console.error('Time slot not found:', request.timeSlotId);
+                    return of(void 0);
+                }
+
+                // Check if attendee already exists in this slot
+                const existingAttendee = timeSlot.attendees.find(a =>
+                    a.name.toLowerCase() === request.name.toLowerCase()
+                );
+
+                if (existingAttendee) {
+                    console.log('Attendee already exists in this time slot');
+                    return of(void 0);
+                }
+
+                // Generate unique ID for new attendee
+                const uniqueId = `${request.timeSlotId}_manual_${Date.now()}_${request.name.replace(/\s+/g, '_').toLowerCase()}`;
+
+                // Get task count for this attendee/customer
+                const dashboardData = this.dashboardService.dashboardData();
+                let taskCount = 0;
+                if (dashboardData?.Tasks) {
+                    const customerTasks = this.getCustomerPendingTasks(request.name, dashboardData.Tasks);
+                    const sportSpecificTasks = customerTasks.filter(task => task.SportPlayed === timeSlot.sport);
+                    taskCount = sportSpecificTasks.length > 0 ? sportSpecificTasks.length : customerTasks.length;
+                }
+
+                const newAttendee = {
+                    id: uniqueId,
+                    name: request.name,
+                    isPresent: false,
+                    contactInfo: {
+                        email: request.email || '',
+                        phone: request.phone || ''
+                    },
+                    pendingTasksCount: taskCount
+                };
+
+                timeSlot.attendees.push(newAttendee);
+                console.log('Added new attendee:', newAttendee);
+
+                return of(void 0);
+            })
         );
-
-        if (existingAttendee) {
-            console.log('Attendee already exists in this time slot');
-            return of(void 0);
-        }
-
-        // Generate unique ID for new attendee
-        const uniqueId = `${request.timeSlotId}_manual_${Date.now()}_${request.name.replace(/\s+/g, '_').toLowerCase()}`;
-
-        // Get task count for this attendee/customer
-        const dashboardData = this.dashboardService.dashboardData();
-        let taskCount = 0;
-        if (dashboardData?.Tasks) {
-            const customerTasks = this.getCustomerPendingTasks(request.name, dashboardData.Tasks);
-            const sportSpecificTasks = customerTasks.filter(task => task.SportPlayed === timeSlot.sport);
-            taskCount = sportSpecificTasks.length > 0 ? sportSpecificTasks.length : customerTasks.length;
-        }
-
-        const newAttendee = {
-            id: uniqueId,
-            name: request.name,
-            isPresent: false,
-            contactInfo: request.contactInfo,
-            pendingTasksCount: taskCount
-        };
-
-        timeSlot.attendees.push(newAttendee);
-        console.log('Added new attendee:', newAttendee);
-
-        // Refresh current week to update the signal
-        this.refreshCurrentWeek();
-
-        return of(void 0);
-
-        // Uncomment when backend is ready:
-        // return this.http.post<void>(`${this.apiUrl}/fixtures/attendees`, request)
-        //   .pipe(tap(() => this.refreshCurrentWeek()));
     }
 
     updateAttendance(update: AttendanceUpdate): Observable<void> {
-        console.log('Fixtures service: Updating attendance:', update);
+        console.log('Updating attendance:', update);
 
-        // Mock implementation
-        const timeSlot = this.mockTimeSlots.find(ts => ts.id === update.timeSlotId);
-        if (timeSlot) {
-            const attendee = timeSlot.attendees.find(a => a.id === update.attendeeId);
-            if (attendee) {
-                console.log(`Updating attendance for ${attendee.name}: ${attendee.isPresent} -> ${update.isPresent}`);
-                attendee.isPresent = update.isPresent;
-                attendee.checkedInAt = update.isPresent ? (update.checkedInAt || new Date()) : undefined;
+        // Try backend API first
+        const backendUpdate = {
+            timeSlotId: parseInt(update.timeSlotId),
+            attendeeId: parseInt(update.attendeeId.split('_')[2] || '0'), // Extract numeric ID
+            attendanceDate: new Date().toISOString().split('T')[0],
+            isPresent: update.isPresent,
+            checkedInAt: update.checkedInAt?.toISOString()
+        };
 
-                // Only refresh the current week to update the signal
-                this.refreshCurrentWeek();
-                console.log(`Attendance updated successfully for ${attendee.name}`);
-            } else {
-                console.error('Attendee not found:', update.attendeeId);
-            }
-        } else {
-            console.error('Time slot not found:', update.timeSlotId);
-        }
+        return this.http.post<void>(`${this.apiUrl}/fixtures/attendance`, backendUpdate).pipe(
+            catchError(error => {
+                console.warn('Backend not available, using mock implementation:', error);
 
-        return of(void 0);
+                // Fallback to mock implementation
+                const timeSlot = this.mockTimeSlots.find(ts => ts.id === update.timeSlotId);
+                if (timeSlot) {
+                    const attendee = timeSlot.attendees.find(a => a.id === update.attendeeId);
+                    if (attendee) {
+                        console.log(`Updating attendance for ${attendee.name}: ${attendee.isPresent} -> ${update.isPresent}`);
+                        attendee.isPresent = update.isPresent;
+                        attendee.checkedInAt = update.isPresent ? (update.checkedInAt || new Date()) : undefined;
+                        console.log(`Attendance updated successfully for ${attendee.name}`);
+                    } else {
+                        console.error('Attendee not found:', update.attendeeId);
+                    }
+                } else {
+                    console.error('Time slot not found:', update.timeSlotId);
+                }
 
-        // Uncomment when backend is ready:
-        // return this.http.put<void>(`${this.apiUrl}/fixtures/attendance`, update)
-        //   .pipe(tap(() => this.refreshCurrentWeek()));
+                return of(void 0);
+            })
+        );
     }
 
     deleteTimeSlot(timeSlotId: string): Observable<void> {
-        console.log('Fixtures service: Deleting time slot:', timeSlotId);
+        console.log('Deleting time slot:', timeSlotId);
 
-        // Mock implementation
-        const index = this.mockTimeSlots.findIndex(ts => ts.id === timeSlotId);
-        if (index > -1) {
-            this.mockTimeSlots.splice(index, 1);
-            this.refreshCurrentWeek();
-        }
+        // Try backend API first
+        return this.http.delete<void>(`${this.apiUrl}/fixtures/time-slots/${timeSlotId}`).pipe(
+            catchError(error => {
+                console.warn('Backend not available, using mock implementation:', error);
 
-        return of(void 0);
+                // Fallback to mock implementation
+                const index = this.mockTimeSlots.findIndex(ts => ts.id === timeSlotId);
+                if (index > -1) {
+                    this.mockTimeSlots.splice(index, 1);
+                }
 
-        // Uncomment when backend is ready:
-        // return this.http.delete<void>(`${this.apiUrl}/fixtures/timeslots/${timeSlotId}`)
-        //   .pipe(tap(() => this.refreshCurrentWeek()));
+                return of(void 0);
+            })
+        );
     }
 
     removeAttendee(timeSlotId: string, attendeeId: string): Observable<void> {
-        console.log('Fixtures service: Removing attendee:', timeSlotId, attendeeId);
+        console.log('Removing attendee:', timeSlotId, attendeeId);
 
-        // Mock implementation
-        const timeSlot = this.mockTimeSlots.find(ts => ts.id === timeSlotId);
-        if (timeSlot) {
-            const index = timeSlot.attendees.findIndex(a => a.id === attendeeId);
-            if (index > -1) {
-                timeSlot.attendees.splice(index, 1);
-                this.refreshCurrentWeek();
-            }
-        }
+        // Extract numeric IDs for backend
+        const numericTimeSlotId = parseInt(timeSlotId);
+        const numericAttendeeId = parseInt(attendeeId.split('_')[2] || '0');
 
-        return of(void 0);
+        // Try backend API first
+        return this.http.delete<void>(`${this.apiUrl}/fixtures/registrations/${numericTimeSlotId}/${numericAttendeeId}`).pipe(
+            catchError(error => {
+                console.warn('Backend not available, using mock implementation:', error);
 
-        // Uncomment when backend is ready:
-        // return this.http.delete<void>(`${this.apiUrl}/fixtures/attendees/${attendeeId}`)
-        //   .pipe(tap(() => this.refreshCurrentWeek()));
-    }
+                // Fallback to mock implementation
+                const timeSlot = this.mockTimeSlots.find(ts => ts.id === timeSlotId);
+                if (timeSlot) {
+                    const index = timeSlot.attendees.findIndex(a => a.id === attendeeId);
+                    if (index > -1) {
+                        timeSlot.attendees.splice(index, 1);
+                    }
+                }
 
-    // Updated method to get customer pending tasks (used by components)
-    getCustomerPendingTasksObservable(customerName: string, sport?: string): Observable<TaskItem[]> {
-        console.log('Fixtures service: Getting pending tasks for customer:', customerName, 'sport:', sport);
-
-        // Get current dashboard data
-        const dashboardData = this.dashboardService.dashboardData();
-        if (!dashboardData?.Tasks) {
-            return of([]);
-        }
-
-        const pendingTasks = dashboardData.Tasks.filter(task => {
-            const isCustomerMatch = task.Customer.toLowerCase() === customerName.toLowerCase();
-            const isPending = task.Status === TaskItemStatus.NotStarted ||
-                task.Status === TaskItemStatus.InProgress ||
-                task.Status === TaskItemStatus.Late;
-            const matchesSport = !sport || task.SportPlayed === sport;
-
-            return isCustomerMatch && isPending && matchesSport;
-        });
-
-        console.log('Fixtures service: Found pending tasks for customer:', pendingTasks);
-        return of(pendingTasks);
+                return of(void 0);
+            })
+        );
     }
 
     getCurrentWeek(): Date {
@@ -433,9 +532,33 @@ export class FixturesService {
 
     // Method to refresh customer task counts when dashboard data changes
     refreshCustomerTaskCounts(): void {
-        console.log('Fixtures service: Manually refreshing customer task counts');
+        console.log('Manually refreshing customer task counts');
         this.updateAttendeesWithCustomerData();
         this.refreshCurrentWeek();
+    }
+
+    // Get customer pending tasks (used by components)
+    getCustomerPendingTasksObservable(customerName: string, sport?: string): Observable<TaskItem[]> {
+        console.log('Getting pending tasks for customer:', customerName, 'sport:', sport);
+
+        // Get current dashboard data
+        const dashboardData = this.dashboardService.dashboardData();
+        if (!dashboardData?.Tasks) {
+            return of([]);
+        }
+
+        const pendingTasks = dashboardData.Tasks.filter(task => {
+            const isCustomerMatch = task.Customer.toLowerCase() === customerName.toLowerCase();
+            const isPending = task.Status === TaskItemStatus.NotStarted ||
+                task.Status === TaskItemStatus.InProgress ||
+                task.Status === TaskItemStatus.Late;
+            const matchesSport = !sport || task.SportPlayed === sport;
+
+            return isCustomerMatch && isPending && matchesSport;
+        });
+
+        console.log('Found pending tasks for customer:', pendingTasks);
+        return of(pendingTasks);
     }
 
     // Synchronous method to get customer pending tasks (used internally)

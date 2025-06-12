@@ -1039,11 +1039,21 @@
 
 .modal-actions {
     display: flex;
-    justify-content: flex-end;
+    justify-content: space-between;
+    align-items: center;
     gap: 16px;
     margin-top: 28px;
     padding-top: 24px;
     border-top: 2px solid #f1f5f9;
+}
+
+.modal-actions-left {
+    flex: 1;
+}
+
+.modal-actions-right {
+    display: flex;
+    gap: 16px;
 }
 
 /* Enhanced Responsive Design */

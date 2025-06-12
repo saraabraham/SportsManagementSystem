@@ -1,4 +1,6 @@
 // src/app/models/fixtures.model.ts
+// Updated to match backend API structure
+
 export interface TimeSlot {
     id: string;
     dayOfWeek: DayOfWeek;
@@ -20,7 +22,6 @@ export interface Attendee {
     checkedInAt?: Date;
     contactInfo?: ContactInfo;
     pendingTasksCount?: number;
-
 }
 
 export interface ContactInfo {
@@ -54,10 +55,12 @@ export interface CreateTimeSlotRequest {
     notes?: string;
 }
 
+// Updated to match backend controller structure
 export interface AddAttendeeRequest {
-    timeSlotId: string;
+    timeSlotId: number;
     name: string;
-    contactInfo?: ContactInfo;
+    email?: string;
+    phone?: string;
 }
 
 export interface AttendanceUpdate {
@@ -65,6 +68,15 @@ export interface AttendanceUpdate {
     attendeeId: string;
     isPresent: boolean;
     checkedInAt?: Date;
+}
+
+// Backend response interfaces
+export interface BackendAttendanceUpdate {
+    timeSlotId: number;
+    attendeeId: number;
+    attendanceDate: string;
+    isPresent: boolean;
+    checkedInAt?: string;
 }
 
 // Common time slots for easy selection

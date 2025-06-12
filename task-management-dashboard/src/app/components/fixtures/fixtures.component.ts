@@ -455,13 +455,17 @@ export class FixturesComponent implements OnInit {
 
         if (this.editingTimeSlot()) {
             console.log('Updating time slot:', request);
-            // TODO: Implement update functionality
+            // For now, since update isn't implemented in backend, show message
+            alert('Time slot update functionality will be implemented soon!');
             this.closeTimeSlotModal();
         } else {
             this.fixturesService.createTimeSlot(request).subscribe({
                 next: () => {
                     console.log('Time slot created successfully');
                     this.closeTimeSlotModal();
+                    // Reload the schedule to show the new time slot
+                    this.loadWeeklySchedule();
+                    alert('Time slot created successfully!');
                 },
                 error: (error) => {
                     console.error('Error creating time slot:', error);
@@ -476,6 +480,9 @@ export class FixturesComponent implements OnInit {
             this.fixturesService.deleteTimeSlot(timeSlotId).subscribe({
                 next: () => {
                     console.log('Time slot deleted successfully');
+                    // Reload the schedule to reflect the deletion
+                    this.loadWeeklySchedule();
+                    alert('Time slot deleted successfully!');
                 },
                 error: (error) => {
                     console.error('Error deleting time slot:', error);
@@ -538,12 +545,10 @@ export class FixturesComponent implements OnInit {
         console.log('Converted TimeSlot ID:', timeSlotId);
 
         const request: AddAttendeeRequest = {
-            timeSlotId: timeSlotId.toString(),
+            timeSlotId: timeSlotId,
             name: attendeeName,
-            contactInfo: {
-                email: this.attendeeFormData.email?.trim() || undefined,
-                phone: this.attendeeFormData.phone?.trim() || undefined
-            }
+            email: this.attendeeFormData.email?.trim() || '',
+            phone: this.attendeeFormData.phone?.trim() || ''
         };
 
         console.log('Final request object:', request);
@@ -553,6 +558,8 @@ export class FixturesComponent implements OnInit {
                 console.log('✅ SUCCESS: Attendee added');
                 console.log('Response:', response);
                 this.closeAttendeeModal();
+                // Reload the schedule to show the new attendee
+                this.loadWeeklySchedule();
                 alert('Attendee added successfully!');
             },
             error: (error) => {
@@ -644,6 +651,8 @@ export class FixturesComponent implements OnInit {
             this.fixturesService.removeAttendee(timeSlotId, attendeeId).subscribe({
                 next: () => {
                     console.log('Attendee removed successfully');
+                    // Reload the schedule to reflect the removal
+                    this.loadWeeklySchedule();
                 },
                 error: (error) => {
                     console.error('Error removing attendee:', error);
